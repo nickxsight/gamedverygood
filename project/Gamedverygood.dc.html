@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  ::selection { background: rgba(139,92,246,.35); }
+  @keyframes gvgFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+  @keyframes gvgPulse { 0%,100% { opacity: .55; } 50% { opacity: 1; } }
+  @keyframes gvgDrift { 0% { transform: translate(0,0) scale(1); } 50% { transform: translate(40px,-30px) scale(1.15); } 100% { transform: translate(0,0) scale(1); } }
+  @keyframes gvgMarquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+  @keyframes gvgScan { 0% { background-position: 0 0; } 100% { background-position: 0 -1200px; } }
+  @keyframes gvgBlink { 0%,100% { opacity:1; } 50% { opacity:.2; } }
+  .gvg-scroll::-webkit-scrollbar { height: 6px; width: 6px; }
+  .gvg-scroll::-webkit-scrollbar-thumb { background: rgba(139,92,246,.4); border-radius: 99px; }
+  .gvg-scroll::-webkit-scrollbar-track { background: transparent; }
+</style>
+</helmet>
+<div ref="{{ rootRef }}" style="position:relative;min-height:100vh;background:#07060e;color:#f3f2f8;font-family:'IBM Plex Sans Thai','Space Grotesk',system-ui,sans-serif;overflow-x:hidden;">
+
+  <div style="position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;">
+    <div style="position:absolute;top:-12%;left:-6%;width:48vw;height:48vw;border-radius:50%;background:radial-gradient(circle,var(--acc,#8b5cf6) 0%,transparent 65%);opacity:.20;filter:blur(40px);animation:gvgDrift 18s ease-in-out infinite;"></div>
+    <div style="position:absolute;bottom:-18%;right:-8%;width:46vw;height:46vw;border-radius:50%;background:radial-gradient(circle,var(--acc2,#22d3ee) 0%,transparent 65%);opacity:.16;filter:blur(40px);animation:gvgDrift 22s ease-in-out infinite reverse;"></div>
+    <div style="position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:54px 54px;mask-image:radial-gradient(ellipse 90% 60% at 50% 0%,#000 30%,transparent 80%);-webkit-mask-image:radial-gradient(ellipse 90% 60% at 50% 0%,#000 30%,transparent 80%);"></div>
+  </div>
+
+  <!-- ============ NAV ============ -->
+  <header style="position:sticky;top:0;z-index:50;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);background:rgba(10,9,18,.72);border-bottom:1px solid rgba(255,255,255,.07);">
+    <div style="max-width:1280px;margin:0 auto;padding:0 28px;height:70px;display:flex;align-items:center;gap:28px;">
+      <div onClick="{{ goHome }}" style="display:flex;align-items:center;gap:11px;cursor:pointer;flex-shrink:0;">
+        <div style="position:relative;width:38px;height:38px;display:grid;place-items:center;background:linear-gradient(150deg,var(--acc,#8b5cf6),var(--acc2,#22d3ee));border-radius:11px;box-shadow:0 6px 20px -6px var(--acc,#8b5cf6);">
+          <span style="font-family:'Space Grotesk';font-weight:700;font-size:17px;color:#0a0814;letter-spacing:-.5px;">GVG</span>
+        </div>
+        <div style="line-height:1;">
+          <div style="font-family:'Space Grotesk';font-weight:700;font-size:16px;letter-spacing:.5px;">GAMEDVERY<span style="color:var(--lime,#a3e635);">GOOD</span></div>
+          <div style="font-size:9.5px;letter-spacing:2.5px;color:rgba(243,242,248,.4);margin-top:3px;font-family:'JetBrains Mono';">WEB3 GAME HUB</div>
+        </div>
+      </div>
+
+      <nav style="display:flex;align-items:center;gap:4px;margin-left:8px;">
+        <sc-for list="{{ nav }}" as="item" hint-placeholder-count="5">
+          <div onClick="{{ item.go }}" style="{{ item.style }}">{{ item.label }}</div>
+        </sc-for>
+      </nav>
+
+      <div style="flex:1;"></div>
+
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="display:none;align-items:center;gap:8px;padding:0 14px;height:38px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;color:rgba(243,242,248,.4);font-size:13px;" class="gvg-search">
+          <span style="font-family:'JetBrains Mono';">⌕</span> ค้นหาเกม...
+        </div>
+        <sc-if value="{{ showWallet }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;align-items:center;gap:10px;padding:0 6px 0 14px;height:40px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:12px;">
+            <div style="line-height:1.1;text-align:right;">
+              <div style="font-size:9px;color:rgba(243,242,248,.45);letter-spacing:.5px;font-family:'JetBrains Mono';">BALANCE</div>
+              <div style="font-family:'Space Grotesk';font-weight:600;font-size:14px;">฿1,250.00</div>
+            </div>
+            <div onClick="{{ goTopup }}" style="cursor:pointer;height:30px;padding:0 14px;display:grid;place-items:center;background:linear-gradient(135deg,var(--acc,#8b5cf6),var(--acc2,#22d3ee));border-radius:9px;font-weight:600;font-size:12.5px;color:#0a0814;">เติมเงิน</div>
+          </div>
+        </sc-if>
+        <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#2a2440,#1a1730);border:1px solid rgba(255,255,255,.1);display:grid;place-items:center;font-family:'Space Grotesk';font-weight:600;font-size:13px;color:var(--acc2,#22d3ee);cursor:pointer;">PG</div>
+      </div>
+    </div>
+  </header>
+
+  <main style="position:relative;z-index:1;">
+
+  <!-- ============ HOME ============ -->
+  <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+  <section data-screen-label="Homepage">
+    <!-- hero -->
+    <div style="max-width:1280px;margin:0 auto;padding:64px 28px 40px;display:grid;grid-template-columns:1.15fr .85fr;gap:48px;align-items:center;">
+      <div>
+        <div style="display:inline-flex;align-items:center;gap:8px;padding:6px 13px;background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.3);border-radius:99px;font-size:12px;color:var(--acc,#8b5cf6);font-weight:500;margin-bottom:24px;">
+          <span style="width:7px;height:7px;border-radius:50%;background:var(--lime,#a3e635);animation:gvgPulse 1.6s infinite;"></span>
+          ครบวงจรด้านเกมในที่เดียว · All-in-one Game Hub
+        </div>
+        <h1 style="font-family:'Space Grotesk';font-weight:700;font-size:60px;line-height:1.04;letter-spacing:-1.5px;margin:0 0 20px;">
+          เติมเกม <span style="background:linear-gradient(120deg,var(--acc,#8b5cf6),var(--acc2,#22d3ee) 60%,var(--lime,#a3e635));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">ไวกว่า</span><br>เล่นเก่งกว่า เดิมพันความมันส์
+        </h1>
+        <p style="font-size:16.5px;line-height:1.7;color:rgba(243,242,248,.62);max-width:480px;margin:0 0 32px;">
+          เติมเกมอัตโนมัติภายใน 5 วินาที พร้อมข่าวสาร ไกด์ และ Tools ช่วยเล่นเกมระดับโปร — รองรับทั้งบัตรเครดิต ทรูมันนี่ และ Crypto Wallet
+        </p>
+        <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
+          <div onClick="{{ goTopup }}" style="cursor:pointer;display:inline-flex;align-items:center;gap:9px;height:52px;padding:0 28px;background:linear-gradient(135deg,var(--acc,#8b5cf6),var(--acc2,#22d3ee));border-radius:14px;font-weight:600;font-size:15.5px;color:#0a0814;box-shadow:0 14px 38px -12px var(--acc,#8b5cf6);" style-hover="transform:translateY(-2px);box-shadow:0 20px 48px -12px var(--acc,#8b5cf6);">
+            เติมเกมเลย <span style="font-family:'JetBrains Mono';">→</span>
+          </div>
+          <div onClick="{{ goTools }}" style="cursor:pointer;display:inline-flex;align-items:center;gap:9px;height:52px;padding:0 26px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.13);border-radius:14px;font-weight:500;font-size:15px;color:#f3f2f8;" style-hover="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.25);">
+            สำรวจ Tools
+          </div>
+        </div>
+        <div style="display:flex;gap:34px;margin-top:44px;">
+          <sc-for list="{{ stats }}" as="s" hint-placeholder-count="3">
+            <div>
+              <div style="font-family:'Space Grotesk';font-weight:700;font-size:28px;background:linear-gradient(120deg,#fff,var(--acc2,#22d3ee));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">{{ s.value }}</div>
+              <div style="font-size:12.5px;color:rgba(243,242,248,.5);margin-top:3px;">{{ s.label }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- web3 quick-topup card -->
+      <div style="position:relative;animation:gvgFloat 7s ease-in-out infinite;">
+        <div style="position:absolute;inset:-1px;background:linear-gradient(140deg,var(--acc,#8b5cf6),transparent 40%,var(--acc2,#22d3ee));border-radius:25px;opacity:.5;filter:blur(2px);"></div>
+        <div style="position:relative;background:linear-gradient(165deg,rgba(26,22,44,.92),rgba(12,10,22,.92));border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:24px;backdrop-filter:blur(12px);box-shadow:0 30px 80px -30px rgba(0,0,0,.8);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+            <div style="font-size:12px;letter-spacing:1.5px;color:rgba(243,242,248,.5);font-family:'JetBrains Mono';">QUICK TOP-UP</div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--lime,#a3e635);"><span style="width:6px;height:6px;border-radius:50%;background:var(--lime,#a3e635);animation:gvgBlink 1.4s infinite;"></span>INSTANT</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;padding:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;margin-bottom:14px;">
+            <div style="width:54px;height:54px;border-radius:14px;flex-shrink:0;display:grid;place-items:center;font-family:'Space Grotesk';font-weight:700;font-size:16px;color:#0a0814; {{ g.coverStyle }}">{{ g.short }}</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-weight:600;font-size:15px;">{{ g.name }}</div>
+              <div style="font-size:12px;color:rgba(243,242,248,.5);">{{ g.currency }}</div>
+            </div>
+            <div style="font-size:11px;color:var(--acc2,#22d3ee);cursor:pointer;" onClick="{{ goTopup }}">เปลี่ยน</div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;">
+            <sc-for list="{{ heroPkgs }}" as="p" hint-placeholder-count="3">
+              <div onClick="{{ p.pick }}" style="{{ p.miniStyle }}">
+                <div style="font-family:'Space Grotesk';font-weight:600;font-size:15px;">{{ p.amount }}</div>
+                <div style="font-size:10.5px;color:rgba(243,242,248,.5);">฿{{ p.price }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;padding:0 4px 14px;">
+            <span style="font-size:13px;color:rgba(243,242,248,.6);">ยอดชำระ</span>
+            <span style="font-family:'Space Grotesk';font-weight:700;font-size:26px;">฿{{ total }}</span>
+          </div>
+          <div onClick="{{ goTopup }}" style="cursor:pointer;height:48px;display:grid;place-items:center;background:linear-gradient(135deg,var(--acc,#8b5cf6),var(--acc2,#22d3ee));border-radius:13px;font-weight:600;font-size:14.5px;color:#0a0814;">ดำเนินการต่อ →</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- marquee of games -->
+    <div style="max-width:1280px;margin:8px auto 0;padding:0 28px;">
+      <div style="overflow:hidden;mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);">
+        <div style="display:flex;gap:14px;width:max-content;animation:gvgMarquee 26s linear infinite;">
+          <sc-for list="{{ marquee }}" as="m" hint-placeholder-count="14">
+            <div style="display:flex;align-items:center;gap:9px;padding:9px 16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:11px;white-space:nowrap;">
+              <span style="width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font-size:9px;font-weight:700;color:#0a0814;font-family:'Space Grotesk'; {{ m.coverStyle }}">{{ m.short }}</span>
+              <span style="font-size:13px;color:rgba(243,242,248,.7);">{{ m.name }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <!-- popular games -->
+    <div style="max-width:1280px;margin:0 auto;padding:72px 28px 0;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:28px;">
+        <div>
+          <div style="font-size:13px;letter-spacing:2px;color:var(--acc2,#22d3ee);font-family:'JetBrains Mono';margin-bottom:8px;">// POPULAR</div>
+          <h2 style="font-family:'Space Grotesk';font-weight:700;font-size:34px;margin:0;letter-spacing:-.5px;">เกมยอดนิยม</h2>
+        </div>
+        <div onClick="{{ goTopup }}" style="cursor:pointer;font-size:13.5px;color:rgba(243,242,248,.6);">ดูทั้งหมด →</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
+        <sc-for list="{{ games }}" as="game" hint-placeholder-count="8">
+          <div onClick="{{ game.open }}" style="cursor:pointer;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:18px;overflow:hidden;transition:transform .25s,border-color .25s,box-shadow .25s;" style-hover="transform:translateY(-6px);border-color:rgba(139,92,246,.5);box-shadow:0 24px 50px -24px rgba(139,92,246,.6);">
+            <div style="position:relative;height:130px;display:grid;place-items:center;overflow:hidden; {{ game.coverStyle }}">
+              <div style="position:absolute;inset:0;background:radial-gradient(circle at 70% 20%,rgba(255,255,255,.25),transparent 55%);"></div>
+              <span style="font-family:'Space Grotesk';font-weight:700;font-size:38px;color:rgba(10,8,20,.85);letter-spacing:-1px;">{{ game.short }}</span>
+              <div style="position:absolute;top:10px;left:10px;padding:3px 9px;background:rgba(10,8,20,.5);backdrop-filter:blur(6px);border-radius:7px;font-size:10px;font-weight:500;color:#fff;">{{ game.genre }}</div>
+            </div>
+            <div style="padding:14px 15px 16px;">
+              <div style="font-weight:600;font-size:15px;margin-bottom:3px;">{{ game.name }}</div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;">
+                <span style="font-size:12px;color:rgba(243,242,248,.5);">เริ่มต้น</span>
+                <span style="font-family:'Space Grotesk';font-weight:600;font-size:15px;color:var(--lime,#a3e635);">฿{{ game.from }}</span>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- tools showcase -->
+    <div style="max-width:1280px;margin:0 auto;padding:72px 28px 0;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:28px;">
+        <div>
+          <div style="font-size:13px;letter-spacing:2px;color:var(--acc2,#22d3ee);font-family:'JetBrains Mono';margin-bottom:8px;">// TOOLKIT</div>
+          <h2 style="font-family:'Space Grotesk';font-weight:700;font-size:34px;margin:0;letter-spacing:-.5px;">Tools ช่วยเล่นเกม</h2>
+        </div>
+        <div onClick="{{ goTools }}" style="cursor:pointer;font-size:13.5px;color:rgba(243,242,248,.6);">ดูทั้งหมด →</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
+        <sc-for list="{{ featuredTools }}" as="t" hint-placeholder-count="4">
+          <div onClick="{{ goTools }}" style="cursor:pointer;position:relative;background:linear-gradient(165deg,rgba(255,255,255,.05),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:20px;transition:transform .25s,border-color .25s;" style-hover="transform:translateY(-5px);border-color:rgba(34,211,238,.45);">
+            <div style="width:46px;height:46px;border-radius:13px;display:grid;place-items:center;font-family:'Space Grotesk';font-weight:700;font-size:14px;color:#0a0814;margin-bottom:16px; {{ t.iconStyle }}">{{ t.code }}</div>
+            <div style="font-weight:600;font-size:15px;margin-bottom:6px;">{{ t.name }}</div>
+            <div style="font-size:12.5px;line-height:1.5;color:rgba(243,242,248,.55);margin-bottom:14px;">{{ t.desc }}</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:10.5px;padding:3px 8px;border-radius:6px;background:rgba(255,255,255,.06);color:rgba(243,242,248,.6);">{{ t.cat }}</span>
+              <span style="{{ t.badgeStyle }}">{{ t.status }}</span>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- news -->
+    <div style="max-width:1280px;margin:0 auto;padding:72px 28px 0;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:28px;">
+        <div>
+          <div style="font-size:13px;letter-spacing:2px;color:var(--acc2,#22d3ee);font-family:'JetBrains Mono';margin-bottom:8px;">// FEED</div>
+          <h2 style="font-family:'Space Grotesk';font-weight:700;font-size:34px;margin:0;letter-spacing:-.5px;">ข่าว & บทความล่าสุด</h2>
+        </div>
+        <div onClick="{{ goNews }}" style="cursor:pointer;font-size:13.5px;color:rgba(243,242,248,.6);">อ่านทั้งหมด →</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:16px;">
+        <sc-for list="{{ homeNews }}" as="n" hint-placeholder-count="3">
+          <div onClick="{{ goNews }}" style="cursor:pointer;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:18px;overflow:hidden;transition:border-color .25s;" style-hover="border-color:rgba(139,92,246,.4);">
+            <div style="position:relative;height:160px;display:grid;place-items:end start;padding:14px; {{ n.coverStyle }}">
+              <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 30%,rgba(7,6,14,.85));"></div>
+              <span style="position:relative;padding:4px 10px;background:rgba(10,8,20,.6);backdrop-filter:blur(6px);border-radius:7px;font-size:11px;font-weight:500;color:var(--acc2,#22d3ee);">{{ n.cat }}</span>
+            </div>
+            <div style="padding:16px;">
+              <div style="font-weight:600;font-size:15.5px;line-height:1.4;margin-bottom:8px;text-wrap:pretty;">{{ n.title }}</div>
+              <div style="font-size:12px;color:rgba(243,242,248,.45);font-family:'JetBrains Mono';">{{ n.time }}</div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- CTA band -->
+    <div style="max-width:1280px;margin:80px auto 0;padding:0 28px;">
+      <div style="position:relative;border-radius:26px;overflow:hidden;border:1px solid rgba(255,255,255,.1);background:linear-gradient(120deg,rgba(139,92,246,.18),rgba(34,211,238,.12));padding:54px 48px;">
+        <div style="position:absolute;top:-40%;right:-5%;width:340px;height:340px;border-radius:50%;background:radial-gradient(circle,var(--acc,#8b5cf6),transparent 70%);opacity:.4;filter:blur(30px);"></div>
+        <div style="position:relative;display:flex;justify-content:space-between;align-items:center;gap:30px;flex-wrap:wrap;">
+          <div>
+            <h2 style="font-family:'Space Grotesk';font-weight:700;font-size:36px;margin:0 0 12px;letter-spacing:-.5px;">เชื่อมต่อ Wallet รับโบนัส 10%</h2>
+            <p style="font-size:15.5px;color:rgba(243,242,248,.7);margin:0;max-width:460px;">สมัครสมาชิกวันนี้ รับเครดิตเติมเกมทันที พร้อมสิทธิ์เข้าถึง Tools ระดับ Pro ฟรี 7 วัน</p>
+          </div>
+          <div onClick="{{ goTopup }}" style="cursor:pointer;flex-shrink:0;height:54px;padding:0 32px;display:grid;place-items:center;background:#0a0814;border:1px solid rgba(255,255,255,.15);border-radius:14px;font-weight:600;font-size:15.5px;color:#fff;" style-hover="background:#000;border-color:var(--acc,#8b5cf6);">เริ่มต้นเลย →</div>
+        </div>
+      </div>
+    </div>
+  </section>
+  </sc-if>
+
+  <!-- ============ TOP-UP ============ -->
+  <sc-if value="{{ isTopup }}" hint-placeholder-val="{{ true }}">
+  <section data-screen-label="Top-up" style="max-width:1280px;margin:0 auto;padding:48px 28px 0;">
+    <div style="margin-bottom:28px;">
+      <div style="font-size:13px;letter-spacing:2px;color:var(--acc2,#22d3ee);font-family:'JetBrains Mono';margin-bottom:8px;">// TOP-UP CENTER</div>
+      <h1 style="font-family:'Space Grotesk';font-weight:700;font-size:38px;margin:0;letter-spacing:-.8px;">เติมเกม</h1>
+    </div>
+
+    <!-- game selector -->
+    <div style="margin-bottom:28px;">
+      <div style="font-size:13px;color:rgba(243,242,248,.5);margin-bottom:12px;font-weight:500;">1 · เลือกเกม</div>
+      <div class="gvg-scroll" style="display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;">
+        <sc-for list="{{ gamePicker }}" as="game" hint-placeholder-count="7">
+          <div onClick="{{ game.pick }}" style="{{ game.chipStyle }}">
+            <div style="width:46px;height:46px;border-radius:12px;display:grid;place-items:center;font-family:'Space Grotesk';font-weight:700;font-size:14px;color:#0a0814;margin-bottom:9px; {{ game.coverStyle }}">{{ game.short }}</div>
+            <div style="font-size:12.5px;font-weight:500;white-space:nowrap;">{{ game.name }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 360px;gap:28px;align-items:start;">
+      <div>
+        <!-- packages -->
+        <div style="font-size:13px;color:rgba(243,242,248,.5);margin-bottom:12px;font-weight:500;">2 · เลือกแพ็กเกจ {{ g.currency }}</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:30px;">
+          <sc-for list="{{ pkgs }}" as="p" hint-placeholder-count="6">
+            <div onClick="{{ p.pick }}" style="{{ p.cardStyle }}">
+              <sc-if value="{{ p.tag }}" hint-placeholder-val="">
+                <div style="{{ p.tagStyle }}">{{ p.tag }}</div>
+              </sc-if>
+              <div style="font-family:'Space Grotesk';font-weight:700;font-size:24px;">{{ p.amount }}</div>
+              <div style="font-size:11.5px;color:var(--lime,#a3e635);height:15px;">{{ p.bonusLabel }}</div>
+              <div style="font-size:11px;color:rgba(243,242,248,.45);margin-top:8px;">{{ g.currency }}</div>
+              <div style="font-family:'Space Grotesk';font-weight:600;font-size:17px;margin-top:10px;">฿{{ p.price }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <!-- account info -->
+        <div style="font-size:13px;color:rgba(243,242,248,.5);margin-bottom:12px;font-weight:500;">3 · ข้อมูลบัญชี</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:30px;">
+          <div>
+            <label style="font-size:11.5px;color:rgba(243,242,248,.5);display:block;margin-bottom:7px;">Player ID / UID</label>
+            <input value="{{ playerId }}" onInput="{{ setPlayerId }}" placeholder="กรอก Player ID" style="width:100%;height:48px;padding:0 16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:12px;color:#f3f2f8;font-size:14px;font-family:'IBM Plex Sans Thai';outline:none;" style-focus="border-color:var(--acc,#8b5cf6);" />
+          </div>
+          <div>
+            <label style="font-size:11.5px;color:rgba(243,242,248,.5);display:block;margin-bottom:7px;">Server / Zone</label>
+            <input value="{{ serverId }}" onInput="{{ setServerId }}" placeholder="เช่น Asia / 8001" style="width:100%;height:48px;padding:0 16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:12px;color:#f3f2f8;font-size:14px;font-family:'IBM Plex Sans Thai';outline:none;" style-focus="border-color:var(--acc,#8b5cf6);" />
+          </div>
+        </div>
+
+        <!-- payment -->
+        <div style="font-size:13px;color:rgba(243,242,248,.5);margin-bottom:12px;font-weight:500;">4 · ช่องทางชำระเงิน</div>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;">
+          <sc-for list="{{ pays }}" as="pay" hint-placeholder-count="4">
+            <div onClick="{{ pay.pick }}" style="{{ pay.style }}">
+              <div style="width:38px;height:38px;border-radius:10px;display:grid;place-items:center;font-size:13px;font-weight:700;font-family:'Space Grotesk';color:#0a0814; {{ pay.iconStyle }}">{{ pay.code }}</div>
+              <div style="flex:1;">
+                <div style="font-weight:600;font-size:14px;">{{ pay.name }}</div>
+                <div style="font-size:11.5px;color:rgba(243,242,248,.45);">{{ pay.note }}</div>
+              </div>
+              <div style="{{ pay.radioStyle }}"></div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- summary -->
+      <div style="position:sticky;top:90px;background:linear-gradient(165deg,rgba(26,22,44,.85),rgba(12,10,22,.9));border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:24px;backdrop-filter:blur(10px);">
+        <div style="font-family:'Space Grotesk';font-weight:600;font-size:16px;margin-bottom:20px;">สรุปคำสั่งซื้อ</div>
+        <div style="display:flex;align-items:center;gap:12px;padding-bottom:18px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:18px;">
+          <div style="width:48px;height:48px;border-radius:12px;display:grid;place-items:center;font-family:'Space Grotesk';font-weight:700;font-size:14px;color:#0a0814; {{ g.coverStyle }}">{{ g.short }}</div>
+          <div><div style="font-weight:600;font-size:14.5px;">{{ g.name }}</div><div style="font-size:12px;color:rgba(243,242,248,.5);">{{ g.genre }}</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:11px;font-size:13.5px;margin-bottom:18px;">
+          <div style="display:flex;justify-content:space-between;"><span style="color:rgba(243,242,248,.55);">แพ็กเกจ</span><span style="font-weight:500;">{{ selAmount }} {{ g.currency }}</span></div>
+          <div style="display:flex;justify-content:space-between;"><span style="color:rgba(243,242,248,.55);">โบนัส</span><span style="font-weight:500;color:var(--lime,#a3e635);">{{ selBonus }}</span></div>
+          <div style="display:flex;justify-content:space-between;"><span style="color:rgba(243,242,248,.55);">Player ID</span><span style="font-weight:500;font-family:'JetBrains Mono';font-size:12px;">{{ playerIdShown }}</span></div>
+          <div style="display:flex;justify-content:space-between;"><span style="color:rgba(243,242,248,.55);">ช่องทาง</span><span style="font-weight:500;">{{ payName }}</span></div>
+          <div style="display:flex;justify-content:space-between;"><span style="color:rgba(243,242,248,.55);">ค่าธรรมเนียม</span><span style="font-weight:500;">฿{{ fee }}</span></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;padding:16px 0;border-top:1px solid rgba(255,255,255,.08);margin-bottom:18px;">
+          <span style="font-size:14px;color:rgba(243,242,248,.7);">ยอดชำระทั้งหมด</span>
+          <span style="font-family:'Space Grotesk';font-weight:700;font-size:28px;">฿{{ grandTotal }}</span>
+        </div>
+        <div onClick="{{ pay }}" style="cursor:pointer;height:52px;display:grid;place-items:center;background:linear-gradient(135deg,var(--acc,#8b5cf6),var(--acc2,#22d3ee));border-radius:14px;font-weight:600;font-size:15.5px;color:#0a0814;box-shadow:0 14px 36px -14px var(--acc,#8b5cf6);">ยืนยันการชำระเงิน</div>
+        <sc-if value="{{ paid }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:14px;padding:12px;background:rgba(163,230,53,.12);border:1px solid rgba(163,230,53,.4);border-radius:12px;text-align:center;font-size:13px;color:var(--lime,#a3e635);">✓ ชำระเงินสำเร็จ! เติมเข้าบัญชีแล้ว</div>
+        </sc-if>
+        <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:14px;font-size:11.5px;color:rgba(243,242,248,.4);">🔒 ปลอดภัย · เติมอัตโนมัติภายใน 5 วินาที</div>
+      </div>
+    </div>
+  </section>
+  </sc-if>
+
+  <!-- ============ TOOLS ============ -->
+  <sc-if value="{{ isTools }}" hint-placeholder-val="{{ false }}">
+  <section data-screen-label="Tools" style="max-width:1280px;margin:0 auto;padding:48px 28px 0;">
+    <div style="margin-bottom:24px;">
+      <div style="font-size:13px;letter-spacing:2px;color:var(--acc2,#22d3ee);font-family:'JetBrains Mono';margin-bottom:8px;">// TOOLKIT</div>
+      <h1 style="font-family:'Space Grotesk';font-weight:700;font-size:38px;margin:0 0 10px;letter-spacing:-.8px;">Tools ช่วยเล่นเกม</h1>
+      <p style="font-size:15px;color:rgba(243,242,248,.55);margin:0;max-width:560px;">ชุดเครื่องมือคำนวณ ปรับแต่ง และวิเคราะห์เกม สำหรับสายโปร — ใช้งานบนเว็บได้ทันที</p>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:26px;flex-wrap:wrap;">
+      <sc-for list="{{ toolFilters }}" as="f" hint-placeholder-count="5">
+        <div onClick="{{ f.pick }}" style="{{ f.style }}">{{ f.label }}</div>
+      </sc-for>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+      <sc-for list="{{ tools }}" as="t" hint-placeholder-count="9">
+        <div style="position:relative;background:linear-gradient(165deg,rgba(255,255,255,.05),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:22px;transition:transform .25s,border-color .25s;" style-hover="transform:translateY(-5px);border-color:rgba(34,211,238,.45);">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;">
+            <div style="width:50px;height:50px;border-radius:14px;display:grid;place-items:center;font-family:'Space Grotesk';font-weight:700;font-size:15px;color:#0a0814; {{ t.iconStyle }}">{{ t.code }}</div>
+            <span style="{{ t.badgeStyle }}">{{ t.status }}</span>
+          </div>
+          <div style="font-weight:600;font-size:16px;margin-bottom:7px;">{{ t.name }}</div>
+          <div style="font-size:13px;line-height:1.55;color:rgba(243,242,248,.55);margin-bottom:18px;min-height:40px;">{{ t.desc }}</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:11px;padding:4px 9px;border-radius:7px;background:rgba(255,255,255,.06);color:rgba(243,242,248,.6);">{{ t.game }}</span>
+            <div onClick="{{ t.toggle }}" style="{{ t.btnStyle }}">{{ t.btnLabel }}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+  </sc-if>
+
+  <!-- ============ NEWS ============ -->
+  <sc-if value="{{ isNews }}" hint-placeholder-val="{{ false }}">
+  <section data-screen-label="News" style="max-width:1280px;margin:0 auto;padding:48px 28px 0;">
+    <div style="margin-bottom:24px;">
+      <div style="font-size:13px;letter-spacing:2px;color:var(--acc2,#22d3ee);font-family:'JetBrains Mono';margin-bottom:8px;">// NEWS FEED</div>
+      <h1 style="font-family:'Space Grotesk';font-weight:700;font-size:38px;margin:0;letter-spacing:-.8px;">ข่าวเกม & บทความ</h1>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:26px;flex-wrap:wrap;">
+      <sc-for list="{{ newsFilters }}" as="f" hint-placeholder-count="5">
+        <div onClick="{{ f.pick }}" style="{{ f.style }}">{{ f.label }}</div>
+      </sc-for>
+    </div>
+    <!-- featured -->
+    <div onClick="{{ noop }}" style="position:relative;border-radius:22px;overflow:hidden;border:1px solid rgba(255,255,255,.08);margin-bottom:28px;min-height:300px;display:grid;place-items:end start;padding:40px; {{ feature.coverStyle }}">
+      <div style="position:absolute;inset:0;background:linear-gradient(110deg,rgba(7,6,14,.9) 20%,transparent 80%);"></div>
+      <div style="position:relative;max-width:560px;">
+        <span style="display:inline-block;padding:5px 12px;background:var(--acc,#8b5cf6);border-radius:8px;font-size:12px;font-weight:600;color:#0a0814;margin-bottom:14px;">{{ feature.cat }} · FEATURED</span>
+        <h2 style="font-family:'Space Grotesk';font-weight:700;font-size:32px;line-height:1.2;margin:0 0 12px;text-wrap:pretty;">{{ feature.title }}</h2>
+        <p style="font-size:14.5px;color:rgba(243,242,248,.7);margin:0 0 14px;line-height:1.6;">{{ feature.excerpt }}</p>
+        <div style="font-size:12px;color:rgba(243,242,248,.5);font-family:'JetBrains Mono';">{{ feature.time }}</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+      <sc-for list="{{ news }}" as="n" hint-placeholder-count="6">
+        <div style="cursor:pointer;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:18px;overflow:hidden;transition:border-color .25s;" style-hover="border-color:rgba(139,92,246,.4);">
+          <div style="position:relative;height:150px;display:grid;place-items:end start;padding:12px; {{ n.coverStyle }}">
+            <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 35%,rgba(7,6,14,.8));"></div>
+            <span style="position:relative;padding:4px 10px;background:rgba(10,8,20,.6);backdrop-filter:blur(6px);border-radius:7px;font-size:11px;font-weight:500;color:var(--acc2,#22d3ee);">{{ n.cat }}</span>
+          </div>
+          <div style="padding:16px;">
+            <div style="font-weight:600;font-size:15px;line-height:1.4;margin-bottom:9px;text-wrap:pretty;">{{ n.title }}</div>
+            <div style="font-size:13px;color:rgba(243,242,248,.5);line-height:1.5;margin-bottom:12px;">{{ n.excerpt }}</div>
+            <div style="font-size:11.5px;color:rgba(243,242,248,.4);font-family:'JetBrains Mono';">{{ n.time }}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+  </sc-if>
+
+  <!-- ============ DETAIL ============ -->
+  <sc-if value="{{ isDetail }}" hint-placeholder-val="{{ false }}">
+  <section data-screen-label="Game Detail" style="max-width:1280px;margin:0 auto;padding:32px 28px 0;">
+    <div onClick="{{ goHome }}" style="cursor:pointer;font-size:13px;color:rgba(243,242,248,.5);margin-bottom:20px;">← กลับหน้าแรก</div>
+    <div style="position:relative;border-radius:24px;overflow:hidden;border:1px solid rgba(255,255,255,.1);min-height:280px;display:flex;align-items:flex-end;padding:36px;margin-bottom:32px; {{ g.coverStyle }}">
+      <div style="position:absolute;inset:0;background:linear-gradient(110deg,rgba(7,6,14,.92) 25%,transparent 85%);"></div>
+      <div style="position:relative;display:flex;align-items:flex-end;gap:24px;flex-wrap:wrap;">
+        <div style="width:96px;height:96px;border-radius:22px;display:grid;place-items:center;font-family:'Space Grotesk';font-weight:700;font-size:28px;color:#0a0814;box-shadow:0 16px 40px -12px rgba(0,0,0,.6); {{ g.coverStyle }}">{{ g.short }}</div>
+        <div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+            <span style="padding:4px 11px;background:rgba(255,255,255,.1);border-radius:8px;font-size:12px;">{{ g.genre }}</span>
+            <span style="font-size:13px;color:var(--lime,#a3e635);">★ 4.9</span>
+          </div>
+          <h1 style="font-family:'Space Grotesk';font-weight:700;font-size:42px;margin:0 0 8px;letter-spacing:-1px;">{{ g.name }}</h1>
+          <p style="font-size:14.5px;color:rgba(243,242,248,.65);margin:0;max-width:540px;line-height:1.6;">{{ g.desc }}</p>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 320px;gap:28px;align-items:start;">
+      <div>
+        <h2 style="font-family:'Space Grotesk';font-weight:600;font-size:22px;margin:0 0 16px;">แพ็กเกจเติม {{ g.currency }}</h2>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:36px;">
+          <sc-for list="{{ pkgs }}" as="p" hint-placeholder-count="6">
+            <div onClick="{{ p.pickGo }}" style="position:relative;cursor:pointer;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:18px;text-align:center;transition:border-color .2s,transform .2s;" style-hover="border-color:var(--acc,#8b5cf6);transform:translateY(-3px);">
+              <div style="font-family:'Space Grotesk';font-weight:700;font-size:22px;">{{ p.amount }}</div>
+              <div style="font-size:11px;color:var(--lime,#a3e635);height:14px;">{{ p.bonusLabel }}</div>
+              <div style="font-family:'Space Grotesk';font-weight:600;font-size:16px;margin-top:10px;color:var(--acc2,#22d3ee);">฿{{ p.price }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <h2 style="font-family:'Space Grotesk';font-weight:600;font-size:22px;margin:0 0 16px;">เกมที่เกี่ยวข้อง</h2>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;">
+          <sc-for list="{{ related }}" as="game" hint-placeholder-count="4">
+            <div onClick="{{ game.open }}" style="cursor:pointer;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;overflow:hidden;transition:border-color .25s;" style-hover="border-color:rgba(139,92,246,.4);">
+              <div style="height:88px;display:grid;place-items:center; {{ game.coverStyle }}"><span style="font-family:'Space Grotesk';font-weight:700;font-size:24px;color:rgba(10,8,20,.85);">{{ game.short }}</span></div>
+              <div style="padding:10px 12px;font-size:13px;font-weight:500;">{{ game.name }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="position:sticky;top:90px;background:linear-gradient(165deg,rgba(26,22,44,.85),rgba(12,10,22,.9));border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:24px;">
+        <div style="font-size:12px;color:rgba(243,242,248,.5);margin-bottom:6px;font-family:'JetBrains Mono';">START FROM</div>
+        <div style="font-family:'Space Grotesk';font-weight:700;font-size:34px;margin-bottom:4px;">฿{{ g.from }}</div>
+        <div style="font-size:13px;color:rgba(243,242,248,.55);margin-bottom:20px;">เติมอัตโนมัติ · ปลอดภัย 100%</div>
+        <div style="display:flex;flex-direction:column;gap:10px;font-size:13px;margin-bottom:22px;">
+          <div style="display:flex;align-items:center;gap:9px;"><span style="color:var(--lime,#a3e635);">✓</span> เติมเข้าทันทีภายใน 5 วินาที</div>
+          <div style="display:flex;align-items:center;gap:9px;"><span style="color:var(--lime,#a3e635);">✓</span> รองรับ Crypto / TrueMoney / บัตร</div>
+          <div style="display:flex;align-items:center;gap:9px;"><span style="color:var(--lime,#a3e635);">✓</span> ทีมงานซัพพอร์ต 24 ชม.</div>
+        </div>
+        <div onClick="{{ goTopup }}" style="cursor:pointer;height:50px;display:grid;place-items:center;background:linear-gradient(135deg,var(--acc,#8b5cf6),var(--acc2,#22d3ee));border-radius:13px;font-weight:600;font-size:15px;color:#0a0814;box-shadow:0 14px 36px -14px var(--acc,#8b5cf6);">เติมเลย →</div>
+      </div>
+    </div>
+  </section>
+  </sc-if>
+
+  </main>
+
+  <!-- ============ FOOTER ============ -->
+  <footer style="position:relative;z-index:1;margin-top:96px;border-top:1px solid rgba(255,255,255,.07);background:rgba(10,9,18,.5);">
+    <div style="max-width:1280px;margin:0 auto;padding:48px 28px 36px;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:36px;">
+      <div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+          <div style="width:34px;height:34px;display:grid;place-items:center;background:linear-gradient(150deg,var(--acc,#8b5cf6),var(--acc2,#22d3ee));border-radius:10px;font-family:'Space Grotesk';font-weight:700;font-size:14px;color:#0a0814;">GVG</div>
+          <div style="font-family:'Space Grotesk';font-weight:700;font-size:15px;">GAMEDVERY<span style="color:var(--lime,#a3e635);">GOOD</span></div>
+        </div>
+        <p style="font-size:13px;color:rgba(243,242,248,.45);line-height:1.6;max-width:280px;margin:0;">แพลตฟอร์มเติมเกม ข่าวสาร และ Tools ครบวงจรสไตล์ Web3 — เร็ว ปลอดภัย เชื่อถือได้</p>
+      </div>
+      <sc-for list="{{ footCols }}" as="col" hint-placeholder-count="3">
+        <div>
+          <div style="font-size:13px;font-weight:600;margin-bottom:14px;">{{ col.title }}</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <sc-for list="{{ col.links }}" as="l" hint-placeholder-count="4">
+              <div style="font-size:13px;color:rgba(243,242,248,.5);cursor:pointer;">{{ l }}</div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="border-top:1px solid rgba(255,255,255,.06);padding:18px 28px;text-align:center;font-size:12px;color:rgba(243,242,248,.35);font-family:'JetBrains Mono';">© 2026 GAMEDVERYGOOD.COM · WEB3 GAME HUB · ALL RIGHTS RESERVED</div>
+  </footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:900},&quot;vibe&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Web3 Violet&quot;,&quot;Toxic Lime&quot;,&quot;Cyber Magenta&quot;,&quot;Ocean&quot;],&quot;default&quot;:&quot;Web3 Violet&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;showWallet&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  state = { route:'home', game:'ro3', pkg:'p3', playerId:'', serverId:'', pay:'crypto', news:'all', tool:'all', paid:false, active:{} };
+
+  GAMES = [
+    { id:'ro',       short:'RO',   name:'Ragnarok Online',  genre:'MMORPG',        currency:'Cash Point', from:35,  c1:'#fbbf24', c2:'#ef4444', desc:'ตำนาน MMORPG ที่อยู่คู่คนไทยมากว่า 20 ปี เติม Cash Point เพื่อปลดล็อกไอเทมและคอสตูมสุดหายาก' },
+    { id:'ro3',      short:'RO3',  name:'Ragnarok Origin',  genre:'MMORPG',        currency:'Nyan Coin',  from:30,  c1:'#22d3ee', c2:'#8b5cf6', desc:'Ragnarok โฉมใหม่บนมือถือ กราฟิกสวยจัดเต็ม เติม Nyan Coin รับโบนัสและกาชาพิเศษทุกวัน' },
+    { id:'valorant', short:'VAL',  name:'Valorant',         genre:'Tactical FPS',  currency:'VP',         from:39,  c1:'#fb7185', c2:'#f43f5e', desc:'เกม FPS แทคติคอลสุดเดือดจาก Riot เติม VP เพื่อปลดล็อกสกินอาวุธและ Battle Pass' },
+    { id:'rov',      short:'RoV',  name:'RoV',              genre:'MOBA',          currency:'Coupon',     from:6,   c1:'#60a5fa', c2:'#3b82f6', desc:'MOBA 5v5 อันดับ 1 ของไทย เติมคูปองเพื่อสุ่มฮีโร่ สกิน และไอเทมในกิจกรรม' },
+    { id:'freefire', short:'FF',   name:'Free Fire',        genre:'Battle Royale', currency:'Diamond',    from:6,   c1:'#fbbf24', c2:'#f97316', desc:'Battle Royale ยอดฮิตบนมือถือ เติมเพชรเพื่อกาชา ตัวละคร และสกินปืนสุดเท่' },
+    { id:'roblox',   short:'RBX',  name:'Roblox',           genre:'Sandbox',       currency:'Robux',      from:25,  c1:'#a3e635', c2:'#22c55e', desc:'จักรวาลเกมไม่รู้จบ เติม Robux เพื่อซื้อไอเทม เกมพาส และอวตารในทุกเกม' },
+    { id:'steam',    short:'STM',  name:'Steam Wallet',     genre:'Platform',      currency:'THB Credit', from:100, c1:'#38bdf8', c2:'#6366f1', desc:'เติมเงินเข้า Steam Wallet เพื่อซื้อเกม DLC และไอเทมในเกมโปรดของคุณ' },
+  ];
+
+  PKGS = [
+    { id:'p1', amount:'60',   price:35,   bonus:0,   tag:'' },
+    { id:'p2', amount:'180',  price:99,   bonus:10,  tag:'' },
+    { id:'p3', amount:'300',  price:159,  bonus:25,  tag:'ยอดนิยม' },
+    { id:'p4', amount:'600',  price:299,  bonus:60,  tag:'' },
+    { id:'p5', amount:'1200', price:579,  bonus:150, tag:'คุ้มสุด' },
+    { id:'p6', amount:'2400', price:1099, bonus:400, tag:'' },
+  ];
+
+  PAYS = [
+    { id:'crypto',    code:'₮',  name:'Crypto (USDT)', note:'ส่วนลด 5% · on-chain', c1:'#a3e635', c2:'#22c55e' },
+    { id:'truemoney', code:'TM', name:'TrueMoney',     note:'วอลเล็ท · อั่งเปา',     c1:'#fb7185', c2:'#f43f5e' },
+    { id:'promptpay', code:'QR', name:'PromptPay',     note:'สแกนจ่ายทันที',        c1:'#22d3ee', c2:'#3b82f6' },
+    { id:'card',      code:'CC', name:'บัตรเครดิต',     note:'Visa · Mastercard',    c1:'#8b5cf6', c2:'#6366f1' },
+  ];
+
+  TOOLS = [
+    { id:'t1', code:'SC', name:'Sensitivity Converter', cat:'FPS',     game:'Valorant', status:'Free', desc:'แปลงค่าความไวเมาส์ข้ามเกมได้แม่นยำ พร้อมคำนวณ eDPI อัตโนมัติ' },
+    { id:'t2', code:'DR', name:'Drop Rate Calculator',  cat:'MMORPG',  game:'RO3',      status:'Free', desc:'คำนวณอัตราดรอปไอเทมและความคุ้มค่าในการฟาร์มแต่ละจุด' },
+    { id:'t3', code:'MR', name:'Map Radar Overlay',     cat:'FPS',     game:'Valorant', status:'Pro',  desc:'โอเวอร์เลย์เรดาร์แผนที่ พร้อมตำแหน่งจุดวางระเบิดและมุมยิง' },
+    { id:'t4', code:'BO', name:'Build Optimizer',       cat:'MOBA',    game:'RoV',      status:'Free', desc:'แนะนำการจัดไอเทมและสกิลที่ดีที่สุดตามฮีโร่และคู่ต่อสู้' },
+    { id:'t5', code:'RT', name:'Rank Tracker',          cat:'MOBA',    game:'RoV',      status:'New',  desc:'ติดตามอันดับ MMR และสถิติการเล่นของคุณแบบเรียลไทม์' },
+    { id:'t6', code:'AF', name:'Auto Farm Planner',     cat:'Sandbox', game:'Roblox',   status:'Pro',  desc:'วางแผนเส้นทางฟาร์มทรัพยากรให้ได้ผลลัพธ์สูงสุดต่อชั่วโมง' },
+    { id:'t7', code:'CB', name:'Combo Builder',         cat:'MOBA',    game:'RoV',      status:'Free', desc:'สร้างและฝึกซ้อมคอมโบสกิลด้วยตัวจับเวลาและ timing guide' },
+    { id:'t8', code:'GA', name:'Gacha Simulator',       cat:'MMORPG',  game:'RO3',      status:'New',  desc:'จำลองการสุ่มกาชาเพื่อประเมินงบก่อนเติมจริง' },
+    { id:'t9', code:'PR', name:'Profit Tracker',        cat:'Sandbox', game:'Roblox',   status:'Pro',  desc:'แดชบอร์ดติดตามรายได้และ trade ในเกม สไตล์ portfolio' },
+  ];
+
+  NEWS = [
+    { id:'n1', cat:'อัปเดต',    title:'Valorant แพตช์ 9.0 ปรับสมดุลเอเจนต์ครั้งใหญ่', excerpt:'Riot เปิดตัวการปรับสมดุลครั้งใหญ่ที่สุดของปี พร้อมแมพใหม่และโหมดจัดอันดับที่ปรับปรุงใหม่', time:'2 ชม. ที่แล้ว', c1:'#fb7185', c2:'#f43f5e' },
+    { id:'n2', cat:'อีสปอร์ต',  title:'ทีมไทยคว้าแชมป์ RoV Pro League ฤดูกาลล่าสุด', excerpt:'ความสำเร็จครั้งประวัติศาสตร์ของวงการอีสปอร์ตไทยบนเวทีระดับภูมิภาค', time:'5 ชม. ที่แล้ว', c1:'#60a5fa', c2:'#3b82f6' },
+    { id:'n3', cat:'รีวิว',     title:'รีวิว Ragnarok Origin คุ้มไหมกับการกลับมา', excerpt:'เจาะลึกระบบเกม กราฟิก และความคุ้มค่าในการเติมของ RO โฉมใหม่บนมือถือ', time:'8 ชม. ที่แล้ว', c1:'#22d3ee', c2:'#8b5cf6' },
+    { id:'n4', cat:'โปรโมชั่น', title:'Free Fire แจกเพชรฟรีกิจกรรมครบรอบ', excerpt:'รวมทุกวิธีรับเพชรและไอเทมฟรีในกิจกรรมครบรอบปีนี้ก่อนใคร', time:'12 ชม. ที่แล้ว', c1:'#fbbf24', c2:'#f97316' },
+    { id:'n5', cat:'ไกด์',      title:'10 ทริควาง Build สาย Mage ใน RO3 ปังสุด', excerpt:'รวมเทคนิคการจัดสเตตัสและไอเทมสำหรับสาย Mage ที่อัปเดตล่าสุด', time:'1 วันที่แล้ว', c1:'#8b5cf6', c2:'#a78bfa' },
+    { id:'n6', cat:'อัปเดต',    title:'Roblox เปิดตัวระบบเศรษฐกิจใหม่สำหรับครีเอเตอร์', excerpt:'ระบบแบ่งรายได้และ marketplace ใหม่ที่จะเปลี่ยนวงการ UGC ไปตลอดกาล', time:'1 วันที่แล้ว', c1:'#a3e635', c2:'#22c55e' },
+  ];
+
+  cover(c1, c2) { return `background:linear-gradient(140deg,${c1},${c2});`; }
+
+  rootRef = (el) => { this.rootEl = el; this.applyTheme(); };
+  componentDidMount() { this.applyTheme(); }
+  componentDidUpdate() { this.applyTheme(); }
+  applyTheme() {
+    if (!this.rootEl) return;
+    const vibes = {
+      'Web3 Violet':   ['#8b5cf6','#22d3ee','#a3e635'],
+      'Toxic Lime':    ['#a3e635','#22d3ee','#a3e635'],
+      'Cyber Magenta': ['#f43f5e','#fb923c','#facc15'],
+      'Ocean':         ['#3b82f6','#06b6d4','#5eead4'],
+    };
+    const v = vibes[this.props.vibe] || vibes['Web3 Violet'];
+    this.rootEl.style.setProperty('--acc', v[0]);
+    this.rootEl.style.setProperty('--acc2', v[1]);
+    this.rootEl.style.setProperty('--lime', v[2]);
+  }
+
+  go(route) { this.setState({ route, paid:false }); if (typeof window !== 'undefined') window.scrollTo(0, 0); }
+  openGame(id) { this.setState({ game:id, route:'detail', paid:false }); if (typeof window !== 'undefined') window.scrollTo(0, 0); }
+
+  renderVals() {
+    const s = this.state;
+    const g = this.GAMES.find(x => x.id === s.game) || this.GAMES[0];
+    g.coverStyle = this.cover(g.c1, g.c2);
+    const cur = this.PKGS.find(p => p.id === s.pkg) || this.PKGS[0];
+
+    const navDefs = [
+      { key:'home',  label:'หน้าแรก' },
+      { key:'topup', label:'เติมเกม' },
+      { key:'tools', label:'Tools' },
+      { key:'news',  label:'ข่าวสาร' },
+    ];
+    const nav = navDefs.map(n => {
+      const on = s.route === n.key || (n.key === 'topup' && s.route === 'detail');
+      return { ...n, go: () => this.go(n.key),
+        style: { cursor:'pointer', padding:'8px 14px', borderRadius:'10px', fontSize:'14px', fontWeight:500, transition:'all .2s', color: on?'#fff':'rgba(243,242,248,.55)', background: on?'rgba(255,255,255,.07)':'transparent' } };
+    });
+
+    const games = this.GAMES.map(x => ({ ...x, coverStyle: this.cover(x.c1, x.c2), open: () => this.openGame(x.id) }));
+    const marquee = [...games, ...games];
+
+    // hero mini packages (first 3)
+    const heroPkgs = this.PKGS.slice(0, 3).map(p => ({ ...p,
+      pick: () => this.setState({ pkg:p.id }),
+      miniStyle: `cursor:pointer;text-align:center;padding:11px 4px;border-radius:12px;transition:all .2s;background:${p.id===s.pkg?'linear-gradient(160deg,rgba(139,92,246,.25),rgba(34,211,238,.15))':'rgba(255,255,255,.04)'};border:1px solid ${p.id===s.pkg?'rgba(139,92,246,.6)':'rgba(255,255,255,.07)'};` }));
+
+    // full packages (topup + detail)
+    const pkgs = this.PKGS.map(p => {
+      const sel = p.id === s.pkg;
+      return { ...p,
+        bonusLabel: p.bonus ? `+${p.bonus} โบนัส` : 'ไม่มีโบนัส',
+        pick: () => this.setState({ pkg:p.id, paid:false }),
+        pickGo: () => { this.setState({ pkg:p.id, route:'topup', paid:false }); if (typeof window!=='undefined') window.scrollTo(0,0); },
+        tagStyle: `position:absolute;top:-9px;left:50%;transform:translateX(-50%);padding:2px 10px;border-radius:99px;font-size:10px;font-weight:600;color:#0a0814;white-space:nowrap;background:linear-gradient(135deg,var(--acc,#8b5cf6),var(--acc2,#22d3ee));`,
+        cardStyle: `position:relative;cursor:pointer;border-radius:16px;padding:18px 14px;text-align:center;transition:all .2s;background:${sel?'linear-gradient(160deg,rgba(139,92,246,.2),rgba(34,211,238,.1))':'rgba(255,255,255,.03)'};border:1px solid ${sel?'var(--acc,#8b5cf6)':'rgba(255,255,255,.08)'};box-shadow:${sel?'0 12px 36px -16px var(--acc,#8b5cf6)':'none'};` };
+    });
+
+    const related = games.filter(x => x.id !== g.id).slice(0, 4);
+
+    // payments
+    const pays = this.PAYS.map(p => {
+      const sel = p.id === s.pay;
+      return { ...p,
+        pick: () => this.setState({ pay:p.id, paid:false }),
+        iconStyle: this.cover(p.c1, p.c2),
+        style: `cursor:pointer;display:flex;align-items:center;gap:12px;padding:14px;border-radius:14px;transition:all .2s;background:${sel?'rgba(255,255,255,.06)':'rgba(255,255,255,.02)'};border:1px solid ${sel?'var(--acc,#8b5cf6)':'rgba(255,255,255,.08)'};`,
+        radioStyle: `width:18px;height:18px;border-radius:50%;flex-shrink:0;border:2px solid ${sel?'var(--acc,#8b5cf6)':'rgba(255,255,255,.2)'};background:${sel?'radial-gradient(circle,var(--acc,#8b5cf6) 0 40%,transparent 45%)':'transparent'};` };
+    });
+    const curPay = this.PAYS.find(p => p.id === s.pay) || this.PAYS[0];
+
+    // tools
+    const toolCats = ['all','FPS','MOBA','MMORPG','Sandbox'];
+    const toolLabels = { all:'ทั้งหมด', FPS:'FPS', MOBA:'MOBA', MMORPG:'MMORPG', Sandbox:'Sandbox' };
+    const toolFilters = toolCats.map(c => ({ label: toolLabels[c], pick: () => this.setState({ tool:c }),
+      style: `cursor:pointer;padding:9px 18px;border-radius:11px;font-size:13.5px;font-weight:500;transition:all .2s;background:${s.tool===c?'linear-gradient(135deg,var(--acc,#8b5cf6),var(--acc2,#22d3ee))':'rgba(255,255,255,.04)'};color:${s.tool===c?'#0a0814':'rgba(243,242,248,.6)'};border:1px solid ${s.tool===c?'transparent':'rgba(255,255,255,.08)'};` }));
+    const badge = (st) => {
+      const m = { Free:['rgba(163,230,53,.15)','var(--lime,#a3e635)'], Pro:['rgba(139,92,246,.18)','var(--acc,#8b5cf6)'], New:['rgba(34,211,238,.15)','var(--acc2,#22d3ee)'] };
+      const c = m[st] || m.Free;
+      return `font-size:10.5px;font-weight:600;padding:4px 9px;border-radius:7px;background:${c[0]};color:${c[1]};`;
+    };
+    const tools = this.TOOLS.filter(t => s.tool === 'all' || t.cat === s.tool).map((t, i) => {
+      const on = !!s.active[t.id];
+      return { ...t, iconStyle: this.cover(['#8b5cf6','#22d3ee','#a3e635','#fb7185','#fbbf24'][i%5], ['#22d3ee','#8b5cf6','#22c55e','#f43f5e','#f97316'][i%5]),
+        badgeStyle: badge(t.status),
+        toggle: () => this.setState(st => ({ active: { ...st.active, [t.id]: !st.active[t.id] } })),
+        btnLabel: on ? 'กำลังใช้งาน ✓' : 'เปิดใช้งาน',
+        btnStyle: `cursor:pointer;padding:8px 16px;border-radius:9px;font-size:12.5px;font-weight:600;transition:all .2s;background:${on?'rgba(163,230,53,.15)':'linear-gradient(135deg,var(--acc,#8b5cf6),var(--acc2,#22d3ee))'};color:${on?'var(--lime,#a3e635)':'#0a0814'};border:1px solid ${on?'rgba(163,230,53,.4)':'transparent'};` };
+    });
+    const featuredTools = this.TOOLS.slice(0, 4).map((t, i) => ({ ...t,
+      iconStyle: this.cover(['#8b5cf6','#22d3ee','#a3e635','#fb7185'][i], ['#22d3ee','#8b5cf6','#22c55e','#f43f5e'][i]),
+      badgeStyle: badge(t.status) }));
+
+    // news
+    const newsCats = ['all','อัปเดต','อีสปอร์ต','รีวิว','โปรโมชั่น','ไกด์'];
+    const newsFilters = newsCats.map(c => ({ label: c === 'all' ? 'ทั้งหมด' : c, pick: () => this.setState({ news:c }),
+      style: `cursor:pointer;padding:9px 18px;border-radius:11px;font-size:13.5px;font-weight:500;transition:all .2s;background:${s.news===c?'linear-gradient(135deg,var(--acc,#8b5cf6),var(--acc2,#22d3ee))':'rgba(255,255,255,.04)'};color:${s.news===c?'#0a0814':'rgba(243,242,248,.6)'};border:1px solid ${s.news===c?'transparent':'rgba(255,255,255,.08)'};` }));
+    const newsAll = this.NEWS.map(n => ({ ...n, coverStyle: this.cover(n.c1, n.c2) }));
+    const news = newsAll.filter(n => s.news === 'all' || n.cat === s.news);
+    const feature = newsAll[0];
+    const homeNews = newsAll.slice(0, 3);
+
+    // game picker (topup)
+    const gamePicker = this.GAMES.map(x => {
+      const sel = x.id === s.game;
+      return { ...x, coverStyle: this.cover(x.c1, x.c2), pick: () => this.setState({ game:x.id, paid:false }),
+        chipStyle: `cursor:pointer;flex-shrink:0;width:108px;text-align:center;padding:14px 8px;border-radius:16px;transition:all .2s;background:${sel?'linear-gradient(160deg,rgba(139,92,246,.18),rgba(34,211,238,.1))':'rgba(255,255,255,.03)'};border:1px solid ${sel?'var(--acc,#8b5cf6)':'rgba(255,255,255,.08)'};` };
+    });
+
+    const fee = curPay.id === 'crypto' ? 0 : (curPay.id === 'card' ? 15 : 5);
+    const grandTotal = cur.price + fee;
+
+    const footCols = [
+      { title:'บริการ', links:['เติมเกม','Tools ช่วยเล่น','ข่าวสาร','โปรโมชั่น'] },
+      { title:'ช่วยเหลือ', links:['วิธีเติมเกม','คำถามที่พบบ่อย','ติดต่อทีมงาน','แจ้งปัญหา'] },
+      { title:'ติดตามเรา', links:['Discord','Facebook','TikTok','YouTube'] },
+    ];
+
+    return {
+      rootRef: this.rootRef,
+      isHome: s.route==='home', isTopup: s.route==='topup', isTools: s.route==='tools', isNews: s.route==='news', isDetail: s.route==='detail',
+      goHome: () => this.go('home'), goTopup: () => this.go('topup'), goTools: () => this.go('tools'), goNews: () => this.go('news'),
+      showWallet: this.props.showWallet !== false,
+      nav, games, marquee, heroPkgs, pkgs, related, pays, tools, featuredTools, toolFilters, news, newsFilters, feature, homeNews, gamePicker, footCols,
+      g, total: cur.price, fee, grandTotal,
+      selAmount: cur.amount, selBonus: cur.bonus ? `+${cur.bonus}` : '—',
+      playerId: s.playerId, serverId: s.serverId,
+      playerIdShown: s.playerId || '—',
+      payName: curPay.name, paid: s.paid,
+      setPlayerId: (e) => this.setState({ playerId: e.target.value }),
+      setServerId: (e) => this.setState({ serverId: e.target.value }),
+      pay: () => this.setState({ paid:true }),
+      noop: () => {},
+      stats: [ { value:'฿24M+', label:'ยอดเติมสะสม' }, { value:'180K+', label:'ผู้เล่นที่ไว้ใจ' }, { value:'5 วิ', label:'เติมเข้าทันที' } ],
+    };
+  }
+}
+</script>
+</body>
+</html>
