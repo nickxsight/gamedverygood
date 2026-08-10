@@ -23,7 +23,12 @@ export function computeVals(st: Store) {
   const g: any = { ...(GAMES.find((x) => x.id === s.game) || GAMES[0]) }
   g.coverStyle = cover(g.c1, g.c2)
   g.slotId = 'img-' + g.id
-  const cur = PKGS.find((p) => p.id === s.pkg) || PKGS[0]
+  // Packages: admin-managed per game (pkgMap) with the built-in set as fallback.
+  const pkgsFor = (gid: string) => (s.pkgMap[gid] && s.pkgMap[gid].length ? s.pkgMap[gid] : PKGS)
+  const findPkg = (gid: string, pid: string) =>
+    (s.pkgMap[gid] || []).find((p) => p.id === pid) || PKGS.find((p) => p.id === pid)
+  const gPkgs = pkgsFor(g.id)
+  const cur = gPkgs.find((p) => p.id === s.pkg) || gPkgs[Math.min(2, gPkgs.length - 1)]
   const q = s.q.trim()
 
   const navDefs = [
@@ -186,14 +191,14 @@ export function computeVals(st: Store) {
     }
   })
 
-  const heroPkgs = PKGS.slice(0, 3).map((p) => ({
+  const heroPkgs = gPkgs.slice(0, 3).map((p) => ({
     ...p,
     pick: () => st.set({ pkg: p.id }),
-    miniStyle: `cursor:pointer;text-align:center;padding:11px 4px;border-radius:12px;transition:all .2s;background:${p.id === s.pkg ? 'rgba(124,131,255,.16)' : 'var(--s-inset,#161922)'};border:1.5px solid ${p.id === s.pkg ? 'var(--acc,#4f46e5)' : 'transparent'};color:var(--t1,#eef0f5);`,
+    miniStyle: `cursor:pointer;text-align:center;padding:11px 4px;border-radius:12px;transition:all .2s;background:${p.id === cur.id ? 'rgba(124,131,255,.16)' : 'var(--s-inset,#161922)'};border:1.5px solid ${p.id === cur.id ? 'var(--acc,#4f46e5)' : 'transparent'};color:var(--t1,#eef0f5);`,
   }))
 
-  const pkgs = PKGS.map((p) => {
-    const sel = p.id === s.pkg
+  const pkgs = gPkgs.map((p) => {
+    const sel = p.id === cur.id
     return {
       ...p,
       bonusLabel: p.bonus ? `+${p.bonus} โบนัส` : 'ไม่มีโบนัส',
@@ -251,14 +256,25 @@ export function computeVals(st: Store) {
     label: c === 'all' ? 'ทั้งหมด' : c, pick: () => st.set({ news: c }),
     style: `cursor:pointer;padding:9px 18px;border-radius:11px;font-size:13.5px;font-weight:500;transition:all .2s;background:${s.news === c ? 'var(--acc,#4f46e5)' : 'var(--s-card,#13151d)'};color:${s.news === c ? '#fff' : 'var(--t2,#9aa1ad)'};border:1.5px solid ${s.news === c ? 'var(--acc,#4f46e5)' : 'var(--bd2,rgba(255,255,255,.12))'};`,
   }))
-  const newsAll = NEWS.map((n) => ({ ...n, coverStyle: cover(n.c1, n.c2), slotId: 'img-' + n.id, open: () => st.openArticle(n.id) }))
+  // News source: admin-published articles when any exist, else the demo set.
+  const CAT_COLORS: Record<string, [string, string]> = {
+    'อัปเดต': ['#fb7185', '#f43f5e'], 'อีสปอร์ต': ['#60a5fa', '#3b82f6'], 'รีวิว': ['#22d3ee', '#6366f1'],
+    'โปรโมชั่น': ['#fbbf24', '#f97316'], 'ไกด์': ['#a78bfa', '#6366f1'],
+  }
+  const newsSrc: any[] = (s.articles && s.articles.length)
+    ? s.articles.map((a) => {
+        const [c1, c2] = CAT_COLORS[a.cat] || ['#6d6af5', '#8b91ff']
+        return { ...a, c1, c2 }
+      })
+    : NEWS
+  const newsAll = newsSrc.map((n) => ({ ...n, coverStyle: cover(n.c1, n.c2), slotId: 'img-' + n.id, open: () => st.openArticle(n.id) }))
   const news = newsAll.filter((n) => s.news === 'all' || n.cat === s.news)
   const feature = newsAll[0]
   const homeNews = newsAll.slice(0, 3)
   const articleData = (() => {
-    const a = NEWS.find((n) => n.id === s.article) || NEWS[0]
+    const a = newsSrc.find((n) => n.id === s.article) || newsSrc[0]
     const more = newsAll.filter((n) => n.id !== a.id).slice(0, 3)
-    return { ...a, coverStyle: cover(a.c1, a.c2), slotId: 'img-' + a.id, body: a.body || [a.excerpt], more }
+    return { ...a, coverStyle: cover(a.c1, a.c2), slotId: 'img-' + a.id, body: (a.body && a.body.length ? a.body : [a.excerpt]), more }
   })()
 
   const gamePickerFull = GAMES.filter((x) => matchGame(x, q))
@@ -285,7 +301,7 @@ export function computeVals(st: Store) {
   const saleSS = pad(Math.floor((msLeft % 60000) / 1000))
   const flashDeals = FLASH_DEALS.map((d, i) => {
     const fg = GAMES.find((x) => x.id === d.gid) || GAMES[0]
-    const fp = PKGS.find((p) => p.id === d.pkgId) || PKGS[0]
+    const fp = findPkg(d.gid, d.pkgId) || pkgsFor(d.gid)[0]
     const salePrice = Math.round(fp.price * (100 - d.off) / 100)
     return {
       key: 'fd' + i, name: fg.name, short: fg.short, coverStyle: cover(fg.c1, fg.c2),
@@ -299,10 +315,10 @@ export function computeVals(st: Store) {
   const recentSrc = st.orders().slice(0, 4)
   const recentOrders = recentSrc.map((o, i) => {
     const og = GAMES.find((x) => x.id === o.gid) || GAMES[0]
-    const op = PKGS.find((p) => p.id === o.pkg) || PKGS[0]
+    const op = findPkg(o.gid, o.pkg)
     return {
       key: 'ro' + i + o.ref, short: og.short, name: og.name, coverStyle: cover(og.c1, og.c2),
-      sub: op.amount + ' ' + og.currency, reorder: () => st.reorder(o.gid, o.pkg),
+      sub: (o.amount || op?.amount || '') + ' ' + og.currency, reorder: () => st.reorder(o.gid, o.pkg),
     }
   })
   const hasPersonal = favGames.length > 0 || recentOrders.length > 0
@@ -327,7 +343,7 @@ export function computeVals(st: Store) {
   const promoIdx = s.promoIdx % PROMOS.length
   const pr = PROMOS[promoIdx]
   const pg = GAMES.find((x) => x.id === pr.gid) || GAMES[0]
-  const pp = PKGS.find((p) => p.id === pr.pkgId) || PKGS[0]
+  const pp = findPkg(pr.gid, pr.pkgId) || pkgsFor(pr.gid)[0]
   const promo = {
     key: 'pr' + promoIdx,
     short: pg.short, name: pg.name, off: pr.off, badge: pr.badge, code: pr.code,
@@ -408,16 +424,16 @@ export function computeVals(st: Store) {
   }
   const orders = st.orders().map((o, i) => {
     const og = GAMES.find((x) => x.id === o.gid) || GAMES[0]
-    const op = PKGS.find((p) => p.id === o.pkg) || PKGS[0]
+    const op = findPkg(o.gid, o.pkg)
     const stt = statusMap[o.status] || statusMap.success
     return {
       key: 'o' + i + o.ref, short: og.short, name: og.name, currency: og.currency, coverStyle: cover(og.c1, og.c2),
-      amount: op.amount, price: op.price, time: o.time, ref: o.ref, statusLabel: stt.label, badgeStyle: stt.style,
+      amount: o.amount || op?.amount || '—', price: o.price ?? op?.price ?? 0, time: o.time, ref: o.ref, statusLabel: stt.label, badgeStyle: stt.style,
       reorder: () => st.reorder(o.gid, o.pkg),
     }
   })
   const totalSpent = st.orders().filter((o) => o.status === 'success').reduce((a, o) => {
-    const op = PKGS.find((p) => p.id === o.pkg) || PKGS[0]; return a + op.price
+    return a + (o.price ?? findPkg(o.gid, o.pkg)?.price ?? 0)
   }, 0)
   // Points: server-authoritative when logged in, demo formula for guests.
   const pointsBal = s.points != null ? s.points : (1250 + s.checkedDays * 20 - s.redeemedPts)
@@ -473,12 +489,12 @@ export function computeVals(st: Store) {
     if (!ref) return null
     if (!found) return { ok: false } as const
     const og = GAMES.find((x) => x.id === found.gid) || GAMES[0]
-    const op = PKGS.find((p) => p.id === found.pkg) || PKGS[0]
+    const op = findPkg(found.gid, found.pkg)
     const stMap: Record<string, string> = { success: 'สำเร็จ ✓', pending: 'กำลังดำเนินการ', failed: 'ไม่สำเร็จ' }
     const stColor: Record<string, string> = { success: 'var(--ok,#4ade80)', pending: '#fb923c', failed: '#f87171' }
     return {
       ok: true, name: og.name, short: og.short, coverStyle: cover(og.c1, og.c2),
-      amount: op.amount, currency: og.currency, ref: found.ref, time: found.time,
+      amount: found.amount || op?.amount || '—', currency: og.currency, ref: found.ref, time: found.time,
       statusLabel: stMap[found.status], statusColor: stColor[found.status],
     } as const
   })()
@@ -572,10 +588,10 @@ export function computeVals(st: Store) {
   const chatStat: Record<string, { l: string; c: string }> = { success: { l: 'สำเร็จ', c: 'var(--ok,#4ade80)' }, pending: { l: 'กำลังดำเนินการ', c: '#fbbf24' }, failed: { l: 'ไม่สำเร็จ', c: '#fb7185' } }
   const buildOrderCard = (o: any) => {
     const og = GAMES.find((x) => x.id === o.gid) || GAMES[0]
-    const op = PKGS.find((p) => p.id === o.pkg) || PKGS[0]
+    const op = findPkg(o.gid, o.pkg)
     const stt = chatStat[o.status] || chatStat.pending
     return {
-      coverStyle: cover(og.c1, og.c2), short: og.short, name: og.name, pkgLabel: op.amount + ' ' + og.currency, ref: o.ref, time: o.time, statusLabel: stt.l,
+      coverStyle: cover(og.c1, og.c2), short: og.short, name: og.name, pkgLabel: (o.amount || op?.amount || '—') + ' ' + og.currency, ref: o.ref, time: o.time, statusLabel: stt.l,
       statusStyle: `display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:7px;font-size:11px;font-weight:600;background:${stt.c}22;color:${stt.c};`,
       go: () => { st.go('history'); st.set({ chatOpen: false }) },
       reorder: () => { st.reorder(o.gid, o.pkg); st.set({ chatOpen: false }) },
@@ -652,6 +668,8 @@ export function computeVals(st: Store) {
     // membership
     user: s.user, isMember: !!s.user,
     userEmailLabel: s.user ? (s.user.email.startsWith('line:') ? 'เข้าสู่ระบบผ่าน LINE 🟢' : s.user.email) : '',
+    // admin
+    isAdmin: s.isAdmin, isAdminRoute: s.route === 'admin', goAdmin: () => st.go('admin'),
     avatarLabel: s.user ? ((s.user.name || s.user.email).trim().slice(0, 2).toUpperCase()) : 'PG',
     walletLabel: s.user ? '฿' + s.redeemCredit.toLocaleString() + '.00' : '฿0.00',
     walletSub: s.user ? 'เครดิตของฉัน' : 'ยอดเงิน',

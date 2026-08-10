@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { GAMES, PKGS, COUPONS, TICKER, SEED_ORDERS, type Order } from './data'
+import { GAMES, PKGS, COUPONS, TICKER, SEED_ORDERS, type Order, type Pkg } from './data'
 
 export type SearchFocus = false | 'nav' | 'hero' | 'catalog'
 export type PayStatus = 'idle' | 'awaiting' | 'processing' | 'success'
@@ -11,6 +11,7 @@ export type ChatMsg = {
 export type Toast = { msg: string; icon: string; k: number }
 
 export type User = { email: string; name: string }
+export type ServerArticle = { id: string; cat: string; title: string; excerpt: string; body: string[]; time: string }
 
 export type State = {
   route: string; game: string; pkg: string; playerId: string; serverId: string
@@ -29,6 +30,8 @@ export type State = {
   saleEnd: number
   // membership
   user: User | null; points: number | null; authBusy: boolean; authError: string
+  // admin-managed content
+  isAdmin: boolean; pkgMap: Record<string, Pkg[]>; articles: ServerArticle[] | null
 }
 
 type Actions = {
@@ -56,6 +59,8 @@ type Actions = {
   login: (email: string, password: string) => Promise<boolean>
   register: (email: string, password: string, name: string) => Promise<boolean>
   logout: () => Promise<void>
+  loadContent: () => Promise<void>
+  applyPackages: (packages: Record<string, any[]>) => void
   showToast: (msg: string, icon?: string) => void
   // chat
   toggleChat: () => void
@@ -180,11 +185,12 @@ export const useStore = create<Store>((set, get) => {
     for (const id of d.favorites || []) favorites[id] = true
     const myOrders: Order[] = (d.orders || []).map((o: any) => ({
       gid: o.gid, pkg: o.pkg, status: o.status, ref: o.ref, time: fmtOrderTime(o.createdAt),
+      amount: o.amount || undefined, price: o.price,
     }))
     set({
       user: d.user, loggedIn: true, points: d.points, redeemCredit: d.redeemCredit,
       checkedDays: d.checkedDays, claimedToday: d.claimedToday, favorites,
-      myOrders, redeemedPts: 0, authError: '',
+      myOrders, redeemedPts: 0, authError: '', isAdmin: !!d.isAdmin,
     })
   }
   const pushMsg: Actions['pushMsg'] = (msg) => set((s) => {
@@ -247,6 +253,7 @@ export const useStore = create<Store>((set, get) => {
     saleEnd: Date.now() + 3 * 3600 * 1000 + 47 * 60 * 1000,
     chatLog: [{ id: 1, role: 'bot', kind: 'text', text: 'สวัสดีค่ะ! ฉันชื่อ Vera ผู้ช่วยเติมเกมของ gamedverygood ถามได้เลยว่าอยากเติมเกมอะไร เช็คสถานะออเดอร์ หรือสอบถามโปรโมชั่นค่ะ', time: '09:24' }],
     user: null, points: null, authBusy: false, authError: '',
+    isAdmin: false, pkgMap: {}, articles: null,
 
     // ── actions ──
     set: patch,
@@ -272,9 +279,10 @@ export const useStore = create<Store>((set, get) => {
         set({ payStatus: 'success', myOrders: [newOrder, ...orders()], coupon: null, couponInput: '', redeemCredit: 0 })
         // Logged-in: persist the order server-side (earns points, burns credit).
         if (st.user) {
-          const pk = PKGS.find((p) => p.id === st.pkg) || PKGS[0]
+          const list = st.pkgMap[st.game]?.length ? st.pkgMap[st.game] : PKGS
+          const pk = list.find((p) => p.id === st.pkg) || list[0]
           const creditUsed = Math.min(st.redeemCredit, pk.price)
-          api('/api/orders', { gid: st.game, pkg: st.pkg, ref, price: pk.price, creditUsed })
+          api('/api/orders', { gid: st.game, pkg: st.pkg, ref, price: pk.price, amount: pk.amount, creditUsed })
             .then((r) => { if (r.ok) applyMe(r.data) })
         }
       }, 1900)
@@ -333,6 +341,25 @@ export const useStore = create<Store>((set, get) => {
       const r = await api('/api/me')
       if (r.ok && r.data && r.data.user) applyMe(r.data)
     },
+    applyPackages: (packages) => {
+      const pkgMap: Record<string, Pkg[]> = {}
+      for (const [gid, list] of Object.entries(packages || {})) {
+        pkgMap[gid] = (list as any[]).map((p) => ({ id: p.id, amount: p.amount, price: p.price, bonus: p.bonus, tag: p.tag || '' }))
+      }
+      set({ pkgMap })
+    },
+    loadContent: async () => {
+      const [pk, ar] = await Promise.all([api('/api/packages'), api('/api/articles')])
+      if (pk.ok && pk.data) get().applyPackages(pk.data.packages || {})
+      if (ar.ok && ar.data && Array.isArray(ar.data.articles)) {
+        set({
+          articles: ar.data.articles.map((a: any) => ({
+            id: a.id, cat: a.cat, title: a.title, excerpt: a.excerpt, body: a.body,
+            time: fmtOrderTime(a.createdAt),
+          })),
+        })
+      }
+    },
     login: async (email, password) => {
       set({ authBusy: true, authError: '' })
       const r = await api('/api/auth/login', { email, password })
@@ -362,9 +389,10 @@ export const useStore = create<Store>((set, get) => {
     logout: async () => {
       await api('/api/auth/logout', {})
       set({
-        user: null, loggedIn: false, points: null, myOrders: null,
+        user: null, loggedIn: false, points: null, myOrders: null, isAdmin: false,
         favorites: { freefire: true, ro3: true }, checkedDays: 3, claimedToday: false,
         redeemCredit: 0, redeemedPts: 0, authError: '',
+        route: get().route === 'admin' ? 'home' : get().route,
       })
       showToast('ออกจากระบบแล้ว', '👋')
     },

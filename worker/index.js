@@ -26,7 +26,36 @@ async function migrate(db) {
   // line_id column for LINE Login (added after the first production schema).
   try { await db.prepare('ALTER TABLE users ADD COLUMN line_id TEXT').run() } catch { /* already exists */ }
   await db.prepare('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_line ON users(line_id)').run()
+  // Denormalized package amount on orders, so history survives price edits.
+  try { await db.prepare('ALTER TABLE orders ADD COLUMN amount TEXT').run() } catch { /* already exists */ }
+  // Admin-managed content: per-game packages and news articles.
+  await db.batch([
+    db.prepare(`CREATE TABLE IF NOT EXISTS packages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      gid TEXT NOT NULL,
+      amount TEXT NOT NULL,
+      price INTEGER NOT NULL,
+      bonus INTEGER NOT NULL DEFAULT 0,
+      tag TEXT NOT NULL DEFAULT '',
+      sort INTEGER NOT NULL DEFAULT 0
+    )`),
+    db.prepare('CREATE INDEX IF NOT EXISTS idx_packages_gid ON packages(gid)'),
+    db.prepare(`CREATE TABLE IF NOT EXISTS articles (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      cat TEXT NOT NULL DEFAULT 'อัปเดต',
+      title TEXT NOT NULL,
+      excerpt TEXT NOT NULL DEFAULT '',
+      body TEXT NOT NULL DEFAULT '',
+      published INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`),
+  ])
 }
+
+// Admins are the accounts whose email is listed in the ADMIN_EMAILS
+// var/secret (comma-separated). LINE accounts can be listed as line:<userId>.
+const adminEmails = (env) => ((env.ADMIN_EMAILS || '').split(',').map((e) => e.trim().toLowerCase()).filter(Boolean))
+const isAdminUser = (env, user) => !!user && adminEmails(env).includes(user.email.toLowerCase())
 function baseTables(db) {
   return db.batch([
       db.prepare(`CREATE TABLE IF NOT EXISTS users (
@@ -107,20 +136,21 @@ async function currentUser(db, request) {
 // Bangkok-local calendar date, for the daily check-in.
 const bkkToday = () => new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10)
 
-async function mePayload(db, user) {
+async function mePayload(db, user, env) {
   const favs = await db.prepare('SELECT game_id FROM favorites WHERE user_id = ?').bind(user.id).all()
   const orders = await db.prepare(
-    'SELECT gid, pkg, status, ref, price, created_at FROM orders WHERE user_id = ? ORDER BY id DESC LIMIT 30',
+    'SELECT gid, pkg, status, ref, price, amount, created_at FROM orders WHERE user_id = ? ORDER BY id DESC LIMIT 30',
   ).bind(user.id).all()
   return {
     user: { email: user.email, name: user.name || '' },
+    isAdmin: isAdminUser(env, user),
     points: user.points,
     redeemCredit: user.redeem_credit,
     checkedDays: user.checked_days,
     claimedToday: user.last_checkin === bkkToday(),
     favorites: (favs.results || []).map((r) => r.game_id),
     orders: (orders.results || []).map((o) => ({
-      gid: o.gid, pkg: o.pkg, status: o.status, ref: o.ref, price: o.price, createdAt: o.created_at,
+      gid: o.gid, pkg: o.pkg, status: o.status, ref: o.ref, price: o.price, amount: o.amount || '', createdAt: o.created_at,
     })),
   }
 }
@@ -216,6 +246,136 @@ async function handleLine(request, env, path, url) {
   return json({ message: 'not found' }, 404)
 }
 
+// ── public content (packages + articles, admin-managed) ─────────────────────
+async function handleContent(env, path) {
+  if (!env.DB) return json({ packages: {}, articles: [] })
+  const db = env.DB
+  await ensureSchema(db)
+  if (path === '/api/packages') {
+    const rows = await db.prepare('SELECT id, gid, amount, price, bonus, tag FROM packages ORDER BY gid, sort, id').all()
+    const packages = {}
+    for (const r of rows.results || []) {
+      if (!packages[r.gid]) packages[r.gid] = []
+      packages[r.gid].push({ id: 'c' + r.id, amount: r.amount, price: r.price, bonus: r.bonus, tag: r.tag })
+    }
+    return json({ packages })
+  }
+  if (path === '/api/articles') {
+    const rows = await db.prepare(
+      'SELECT id, cat, title, excerpt, body, created_at FROM articles WHERE published = 1 ORDER BY id DESC LIMIT 60',
+    ).all()
+    return json({
+      articles: (rows.results || []).map((a) => ({
+        id: 'a' + a.id, cat: a.cat, title: a.title, excerpt: a.excerpt,
+        body: a.body.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean),
+        createdAt: a.created_at,
+      })),
+    })
+  }
+  return json({ message: 'not found' }, 404)
+}
+
+// ── admin backoffice API ────────────────────────────────────────────────────
+async function handleAdmin(request, env, path) {
+  if (!env.DB) return json({ message: 'ยังไม่ได้ตั้งค่าฐานข้อมูล' }, 503)
+  const db = env.DB
+  await ensureSchema(db)
+  const user = await currentUser(db, request)
+  if (!user) return json({ message: 'กรุณาเข้าสู่ระบบ' }, 401)
+  if (!isAdminUser(env, user)) return json({ message: 'บัญชีนี้ไม่มีสิทธิ์แอดมิน' }, 403)
+
+  if (path === '/api/admin/overview' && request.method === 'GET') {
+    const users = await db.prepare('SELECT COUNT(*) AS n FROM users').first()
+    const orders = await db.prepare("SELECT COUNT(*) AS n, COALESCE(SUM(price),0) AS sum FROM orders WHERE status = 'success'").first()
+    const latest = await db.prepare(
+      `SELECT o.gid, o.pkg, o.amount, o.price, o.ref, o.created_at, u.email, u.name
+       FROM orders o JOIN users u ON u.id = o.user_id ORDER BY o.id DESC LIMIT 15`,
+    ).all()
+    return json({
+      users: users.n, orders: orders.n, revenue: orders.sum,
+      latest: (latest.results || []).map((o) => ({
+        gid: o.gid, pkg: o.pkg, amount: o.amount || '', price: o.price, ref: o.ref,
+        createdAt: o.created_at, buyer: o.name || o.email,
+      })),
+    })
+  }
+
+  // Per-game packages: PUT replaces the game's package list, DELETE reverts
+  // the game to the built-in defaults.
+  const pkgMatch = path.match(/^\/api\/admin\/packages\/([a-z0-9_-]{1,40})$/)
+  if (pkgMatch) {
+    const gid = pkgMatch[1]
+    if (request.method === 'PUT') {
+      const b = await readBody(request)
+      const list = Array.isArray(b && b.packages) ? b.packages.slice(0, 12) : null
+      if (!list || list.length === 0) return json({ message: 'ต้องมีแพ็กเกจอย่างน้อย 1 รายการ' }, 400)
+      const rows = []
+      for (const [i, p] of list.entries()) {
+        const amount = String((p && p.amount) || '').trim().slice(0, 20)
+        const price = Math.round(Number(p && p.price))
+        const bonus = Math.max(0, Math.round(Number((p && p.bonus) || 0)))
+        const tag = String((p && p.tag) || '').trim().slice(0, 20)
+        if (!amount || !Number.isFinite(price) || price < 1 || price > 1000000) {
+          return json({ message: `แถวที่ ${i + 1}: กรอกจำนวนและราคาให้ถูกต้อง (ราคา 1–1,000,000)` }, 400)
+        }
+        rows.push({ amount, price, bonus, tag, sort: i })
+      }
+      await db.prepare('DELETE FROM packages WHERE gid = ?').bind(gid).run()
+      await db.batch(rows.map((r) =>
+        db.prepare('INSERT INTO packages (gid, amount, price, bonus, tag, sort) VALUES (?, ?, ?, ?, ?, ?)')
+          .bind(gid, r.amount, r.price, r.bonus, r.tag, r.sort)))
+      return handleContent(env, '/api/packages')
+    }
+    if (request.method === 'DELETE') {
+      await db.prepare('DELETE FROM packages WHERE gid = ?').bind(gid).run()
+      return handleContent(env, '/api/packages')
+    }
+  }
+
+  // Articles CRUD.
+  if (path === '/api/admin/articles' && request.method === 'GET') {
+    const rows = await db.prepare('SELECT * FROM articles ORDER BY id DESC LIMIT 200').all()
+    return json({ articles: rows.results || [] })
+  }
+  const artBody = async () => {
+    const b = await readBody(request)
+    const title = String((b && b.title) || '').trim().slice(0, 200)
+    const cat = String((b && b.cat) || 'อัปเดต').trim().slice(0, 30)
+    const excerpt = String((b && b.excerpt) || '').trim().slice(0, 500)
+    const body = String((b && b.body) || '').trim().slice(0, 20000)
+    const published = (b && b.published) ? 1 : 0
+    if (!title || !body) return { error: json({ message: 'กรอกหัวข้อและเนื้อหาให้ครบ' }, 400) }
+    return { title, cat, excerpt, body, published }
+  }
+  if (path === '/api/admin/articles' && request.method === 'POST') {
+    const a = await artBody()
+    if (a.error) return a.error
+    const row = await db.prepare(
+      'INSERT INTO articles (cat, title, excerpt, body, published) VALUES (?, ?, ?, ?, ?) RETURNING *',
+    ).bind(a.cat, a.title, a.excerpt, a.body, a.published).first()
+    return json({ article: row })
+  }
+  const artMatch = path.match(/^\/api\/admin\/articles\/(\d{1,10})$/)
+  if (artMatch) {
+    const id = Number(artMatch[1])
+    if (request.method === 'PUT') {
+      const a = await artBody()
+      if (a.error) return a.error
+      const row = await db.prepare(
+        'UPDATE articles SET cat = ?, title = ?, excerpt = ?, body = ?, published = ? WHERE id = ? RETURNING *',
+      ).bind(a.cat, a.title, a.excerpt, a.body, a.published, id).first()
+      if (!row) return json({ message: 'ไม่พบบทความ' }, 404)
+      return json({ article: row })
+    }
+    if (request.method === 'DELETE') {
+      await db.prepare('DELETE FROM articles WHERE id = ?').bind(id).run()
+      return json({ ok: true })
+    }
+  }
+
+  return json({ message: 'not found' }, 404)
+}
+
 // ── membership API router ───────────────────────────────────────────────────
 async function handleAccount(request, env, path) {
   if (!env.DB) return json({ message: 'ระบบสมาชิกยังไม่พร้อมใช้งาน (ยังไม่ได้ตั้งค่าฐานข้อมูล)' }, 503)
@@ -239,7 +399,7 @@ async function handleAccount(request, env, path) {
     const token = randomToken()
     await db.prepare('INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)')
       .bind(token, ins.id, Date.now() + SESSION_DAYS * 86400000).run()
-    return json(await mePayload(db, ins), 200, { 'Set-Cookie': sessionCookie(token, SESSION_DAYS * 86400) })
+    return json(await mePayload(db, ins, env), 200, { 'Set-Cookie': sessionCookie(token, SESSION_DAYS * 86400) })
   }
 
   if (path === '/api/auth/login' && request.method === 'POST') {
@@ -253,7 +413,7 @@ async function handleAccount(request, env, path) {
     const token = randomToken()
     await db.prepare('INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)')
       .bind(token, user.id, Date.now() + SESSION_DAYS * 86400000).run()
-    return json(await mePayload(db, user), 200, { 'Set-Cookie': sessionCookie(token, SESSION_DAYS * 86400) })
+    return json(await mePayload(db, user, env), 200, { 'Set-Cookie': sessionCookie(token, SESSION_DAYS * 86400) })
   }
 
   if (path === '/api/auth/logout' && request.method === 'POST') {
@@ -266,7 +426,7 @@ async function handleAccount(request, env, path) {
   const user = await currentUser(db, request)
   if (path === '/api/me' && request.method === 'GET') {
     if (!user) return json({ user: null }, 200)
-    return json(await mePayload(db, user))
+    return json(await mePayload(db, user, env))
   }
   if (!user) return json({ message: 'กรุณาเข้าสู่ระบบ' }, 401)
 
@@ -312,19 +472,20 @@ async function handleAccount(request, env, path) {
     const gid = ((b && b.gid) || '').slice(0, 40)
     const pkg = ((b && b.pkg) || '').slice(0, 20)
     const ref = ((b && b.ref) || '').slice(0, 30)
+    const amount = ((b && b.amount) || '').slice(0, 20)
     const price = Math.max(0, Math.min(1000000, Number((b && b.price) || 0)))
     const creditUsed = Math.max(0, Math.min(user.redeem_credit, Number((b && b.creditUsed) || 0)))
     if (!gid || !pkg || !ref) return json({ message: 'ข้อมูลออเดอร์ไม่ครบ' }, 400)
     // Record the order, earn 1 point per ฿10, burn any credit that was applied.
     const earned = Math.floor(price / 10)
     await db.batch([
-      db.prepare('INSERT INTO orders (user_id, gid, pkg, ref, price) VALUES (?, ?, ?, ?, ?)')
-        .bind(user.id, gid, pkg, ref, price),
+      db.prepare('INSERT INTO orders (user_id, gid, pkg, ref, price, amount) VALUES (?, ?, ?, ?, ?, ?)')
+        .bind(user.id, gid, pkg, ref, price, amount),
       db.prepare('UPDATE users SET points = points + ?, redeem_credit = redeem_credit - ? WHERE id = ?')
         .bind(earned, creditUsed, user.id),
     ])
     const fresh = await db.prepare('SELECT * FROM users WHERE id = ?').bind(user.id).first()
-    return json(await mePayload(db, fresh))
+    return json(await mePayload(db, fresh, env))
   }
 
   return json({ message: 'not found' }, 404)
@@ -345,6 +506,24 @@ export default {
         return await handleLine(request, env, path, url)
       } catch (err) {
         console.error('[line]', path, err && err.message)
+        return json({ message: 'เกิดข้อผิดพลาด ลองใหม่อีกครั้ง' }, 500)
+      }
+    }
+
+    if (path === '/api/packages' || path === '/api/articles') {
+      try {
+        return await handleContent(env, path)
+      } catch (err) {
+        console.error('[content]', path, err && err.message)
+        return json({ message: 'เกิดข้อผิดพลาด ลองใหม่อีกครั้ง' }, 500)
+      }
+    }
+
+    if (path.startsWith('/api/admin/')) {
+      try {
+        return await handleAdmin(request, env, path)
+      } catch (err) {
+        console.error('[admin]', path, err && err.message)
         return json({ message: 'เกิดข้อผิดพลาด ลองใหม่อีกครั้ง' }, 500)
       }
     }

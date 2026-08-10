@@ -11,7 +11,7 @@ export type Tool = { id: string; code: string; name: string; cat: string; game: 
 export type NewsItem = { id: string; cat: string; title: string; excerpt: string; time: string; c1: string; c2: string; body: string[] }
 export type Review = { name: string; rating: number; game: string; text: string; time: string; c1: string; c2: string }
 export type TickerItem = { who: string; g: string; a: string; t: string }
-export type Order = { gid: string; pkg: string; status: 'success' | 'pending' | 'failed'; time: string; ref: string }
+export type Order = { gid: string; pkg: string; status: 'success' | 'pending' | 'failed'; time: string; ref: string; amount?: string; price?: number }
 export type Coupon = { type: 'pct' | 'fixed'; value: number; label: string }
 
 export const COUPONS: Record<string, Coupon> = {

@@ -19,6 +19,7 @@ import Tools from './routes/Tools'
 import News from './routes/News'
 import Article from './routes/Article'
 import Detail from './routes/Detail'
+import Admin from './routes/Admin'
 
 // Fixed brand vibe (the design prototype's default "Indigo").
 const VIBE = ['#6d6af5', '#8b91ff', '#22c55e']
@@ -30,6 +31,7 @@ export default function App() {
 
   // Restore persisted theme + membership session once; surface OAuth results.
   const loadMe = useStore((s) => s.loadMe)
+  const loadContent = useStore((s) => s.loadContent)
   const showToast = useStore((s) => s.showToast)
   useEffect(() => {
     try {
@@ -37,13 +39,14 @@ export default function App() {
       if (t === 'day' || t === 'night') set({ theme: t })
     } catch { /* */ }
     loadMe()
+    loadContent()
     // LINE Login redirects land back here with a status query param.
     const p = new URLSearchParams(window.location.search)
     const authError = p.get('auth_error')
     if (authError) showToast(authError, '⚠️')
     else if (p.get('welcome') === 'line') showToast('เข้าสู่ระบบด้วย LINE สำเร็จ', '✓')
     if (authError || p.get('welcome')) window.history.replaceState({}, '', window.location.pathname)
-  }, [set, loadMe, showToast])
+  }, [set, loadMe, loadContent, showToast])
 
   // applyTheme: data-theme + body bg + accent vars.
   useEffect(() => {
@@ -92,6 +95,7 @@ export default function App() {
         {v.isNews && <News v={v} />}
         {v.isArticleRoute && <Article v={v} />}
         {v.isDetail && <Detail v={v} />}
+        {v.isAdminRoute && <Admin v={v} />}
       </main>
 
       <Footer v={v} />
