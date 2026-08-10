@@ -653,7 +653,7 @@ export function computeVals(st: Store) {
     user: s.user, isMember: !!s.user,
     userEmailLabel: s.user ? (s.user.email.startsWith('line:') ? 'เข้าสู่ระบบผ่าน LINE 🟢' : s.user.email) : '',
     avatarLabel: s.user ? ((s.user.name || s.user.email).trim().slice(0, 2).toUpperCase()) : 'PG',
-    walletLabel: s.user ? '฿' + s.redeemCredit.toLocaleString() + '.00' : '฿1,250.00',
+    walletLabel: s.user ? '฿' + s.redeemCredit.toLocaleString() + '.00' : '฿0.00',
     walletSub: s.user ? 'เครดิตของฉัน' : 'ยอดเงิน',
     doLogout: () => st.logout(),
     isArticleRoute: s.route === 'article', article: articleData,
