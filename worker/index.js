@@ -17,7 +17,18 @@ const json = (obj, status = 200, headers = {}) =>
 let schemaReady = null
 function ensureSchema(db) {
   if (!schemaReady) {
-    schemaReady = db.batch([
+    schemaReady = migrate(db).catch((e) => { schemaReady = null; throw e })
+  }
+  return schemaReady
+}
+async function migrate(db) {
+  await baseTables(db)
+  // line_id column for LINE Login (added after the first production schema).
+  try { await db.prepare('ALTER TABLE users ADD COLUMN line_id TEXT').run() } catch { /* already exists */ }
+  await db.prepare('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_line ON users(line_id)').run()
+}
+function baseTables(db) {
+  return db.batch([
       db.prepare(`CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         email TEXT UNIQUE NOT NULL,
@@ -50,9 +61,7 @@ function ensureSchema(db) {
         price INTEGER NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
       )`),
-    ]).catch((e) => { schemaReady = null; throw e })
-  }
-  return schemaReady
+  ])
 }
 
 // ── auth helpers ────────────────────────────────────────────────────────────
@@ -118,6 +127,93 @@ async function mePayload(db, user) {
 
 async function readBody(request) {
   try { return await request.json() } catch { return null }
+}
+
+// ── LINE Login (OAuth 2.0 authorization-code flow) ──────────────────────────
+// Requires LINE_CHANNEL_ID (var) + LINE_CHANNEL_SECRET (secret) from a
+// LINE Login channel; its Callback URL must be <origin>/api/auth/line/callback.
+const LINE_STATE_COOKIE = 'gvg_line_state'
+const stateCookie = (value, maxAge) =>
+  `${LINE_STATE_COOKIE}=${value}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${maxAge}`
+
+const redirectWith = (location, cookies) => {
+  const headers = new Headers({ Location: location })
+  for (const c of cookies) headers.append('Set-Cookie', c)
+  return new Response(null, { status: 302, headers })
+}
+
+async function handleLine(request, env, path, url) {
+  const failTo = (msg, extra = []) =>
+    redirectWith(url.origin + '/?auth_error=' + encodeURIComponent(msg), [stateCookie('', 0), ...extra])
+
+  if (path === '/api/auth/line/start') {
+    if (!env.LINE_CHANNEL_ID || !env.LINE_CHANNEL_SECRET || !env.DB) {
+      return failTo('ยังไม่ได้ตั้งค่า LINE Login (ต้องใส่ Channel ID/Secret ก่อน)')
+    }
+    const state = randomToken().slice(0, 32)
+    const auth = new URL('https://access.line.me/oauth2/v2.1/authorize')
+    auth.searchParams.set('response_type', 'code')
+    auth.searchParams.set('client_id', env.LINE_CHANNEL_ID)
+    auth.searchParams.set('redirect_uri', url.origin + '/api/auth/line/callback')
+    auth.searchParams.set('state', state)
+    auth.searchParams.set('scope', 'profile openid')
+    return redirectWith(auth.toString(), [stateCookie(state, 600)])
+  }
+
+  if (path === '/api/auth/line/callback') {
+    const code = url.searchParams.get('code')
+    const state = url.searchParams.get('state')
+    if (url.searchParams.get('error')) return failTo('ยกเลิกการเข้าสู่ระบบด้วย LINE')
+    if (!code || !state || state !== getCookie(request, LINE_STATE_COOKIE)) {
+      return failTo('การยืนยันตัวตนไม่ถูกต้อง ลองใหม่อีกครั้ง')
+    }
+    try {
+      const tokenResp = await fetch('https://api.line.me/oauth2/v2.1/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'authorization_code',
+          code,
+          redirect_uri: url.origin + '/api/auth/line/callback',
+          client_id: env.LINE_CHANNEL_ID,
+          client_secret: env.LINE_CHANNEL_SECRET,
+        }),
+      })
+      if (!tokenResp.ok) {
+        console.error('[line] token exchange', tokenResp.status, await tokenResp.text())
+        return failTo('เข้าสู่ระบบด้วย LINE ไม่สำเร็จ ลองใหม่อีกครั้ง')
+      }
+      const tok = await tokenResp.json()
+      const profResp = await fetch('https://api.line.me/v2/profile', {
+        headers: { Authorization: 'Bearer ' + tok.access_token },
+      })
+      if (!profResp.ok) return failTo('ดึงข้อมูลโปรไฟล์ LINE ไม่สำเร็จ')
+      const prof = await profResp.json() // { userId, displayName, pictureUrl }
+
+      const db = env.DB
+      await ensureSchema(db)
+      let user = await db.prepare('SELECT * FROM users WHERE line_id = ?').bind(prof.userId).first()
+      if (!user) {
+        user = await db.prepare(
+          'INSERT INTO users (email, name, pass_hash, salt, line_id) VALUES (?, ?, ?, ?, ?) RETURNING *',
+        ).bind('line:' + prof.userId, (prof.displayName || 'LINE User').slice(0, 60), '', '', prof.userId).first()
+      } else if (prof.displayName && prof.displayName !== user.name) {
+        await db.prepare('UPDATE users SET name = ? WHERE id = ?').bind(prof.displayName.slice(0, 60), user.id).run()
+      }
+      const token = randomToken()
+      await db.prepare('INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)')
+        .bind(token, user.id, Date.now() + SESSION_DAYS * 86400000).run()
+      return redirectWith(url.origin + '/?welcome=line', [
+        stateCookie('', 0),
+        sessionCookie(token, SESSION_DAYS * 86400),
+      ])
+    } catch (err) {
+      console.error('[line] callback failed:', err && err.message)
+      return failTo('เกิดข้อผิดพลาด ลองใหม่อีกครั้ง')
+    }
+  }
+
+  return json({ message: 'not found' }, 404)
 }
 
 // ── membership API router ───────────────────────────────────────────────────
@@ -241,7 +337,16 @@ export default {
     const path = url.pathname
 
     if (path === '/api/health') {
-      return json({ ok: true, hasKey: !!env.ANTHROPIC_API_KEY, hasDb: !!env.DB, model: env.ANTHROPIC_MODEL || 'claude-sonnet-5' })
+      return json({ ok: true, hasKey: !!env.ANTHROPIC_API_KEY, hasDb: !!env.DB, hasLine: !!(env.LINE_CHANNEL_ID && env.LINE_CHANNEL_SECRET), model: env.ANTHROPIC_MODEL || 'claude-sonnet-5' })
+    }
+
+    if (path.startsWith('/api/auth/line/')) {
+      try {
+        return await handleLine(request, env, path, url)
+      } catch (err) {
+        console.error('[line]', path, err && err.message)
+        return json({ message: 'เกิดข้อผิดพลาด ลองใหม่อีกครั้ง' }, 500)
+      }
     }
 
     if (path.startsWith('/api/auth/') || path === '/api/me' || path.startsWith('/api/me/') || path === '/api/orders') {

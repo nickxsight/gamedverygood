@@ -28,15 +28,22 @@ export default function App() {
   const set = st.set
   const rootRef = useRef<HTMLDivElement>(null)
 
-  // Restore persisted theme + membership session once.
+  // Restore persisted theme + membership session once; surface OAuth results.
   const loadMe = useStore((s) => s.loadMe)
+  const showToast = useStore((s) => s.showToast)
   useEffect(() => {
     try {
       const t = localStorage.getItem('gvg-theme')
       if (t === 'day' || t === 'night') set({ theme: t })
     } catch { /* */ }
     loadMe()
-  }, [set, loadMe])
+    // LINE Login redirects land back here with a status query param.
+    const p = new URLSearchParams(window.location.search)
+    const authError = p.get('auth_error')
+    if (authError) showToast(authError, '⚠️')
+    else if (p.get('welcome') === 'line') showToast('เข้าสู่ระบบด้วย LINE สำเร็จ', '✓')
+    if (authError || p.get('welcome')) window.history.replaceState({}, '', window.location.pathname)
+  }, [set, loadMe, showToast])
 
   // applyTheme: data-theme + body bg + accent vars.
   useEffect(() => {

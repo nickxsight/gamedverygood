@@ -15,7 +15,7 @@ export default function History({ v }: { v: Vals }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ textAlign: 'right', lineHeight: 1.3 }}>
               <div style={{ fontWeight: 600, fontSize: 14 }}>{v.user!.name || 'สมาชิก'}</div>
-              <div style={{ fontSize: 12, color: 'var(--t3,#878e9a)' }}>{v.user!.email}</div>
+              <div style={{ fontSize: 12, color: 'var(--t3,#878e9a)' }}>{v.userEmailLabel}</div>
             </div>
             <div onClick={v.doLogout} style={{ cursor: 'pointer', height: 40, padding: '0 16px', display: 'grid', placeItems: 'center', backdropFilter: 'blur(15px) saturate(1.4)', WebkitBackdropFilter: 'blur(15px) saturate(1.4)', background: 'var(--s-card,#13151d)', border: '1.5px solid var(--bd2,rgba(255,255,255,.12))', borderRadius: 11, fontSize: 13, fontWeight: 600, color: 'var(--t2b,#c4c8d2)' }}>ออกจากระบบ</div>
           </div>

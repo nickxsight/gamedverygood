@@ -651,6 +651,7 @@ export function computeVals(st: Store) {
     avatarClick: () => { if (st.loggedIn) st.go('history'); else st.set({ showLogin: true }) },
     // membership
     user: s.user, isMember: !!s.user,
+    userEmailLabel: s.user ? (s.user.email.startsWith('line:') ? 'เข้าสู่ระบบผ่าน LINE 🟢' : s.user.email) : '',
     avatarLabel: s.user ? ((s.user.name || s.user.email).trim().slice(0, 2).toUpperCase()) : 'PG',
     walletLabel: s.user ? '฿' + s.redeemCredit.toLocaleString() + '.00' : '฿1,250.00',
     walletSub: s.user ? 'เครดิตของฉัน' : 'ยอดเงิน',
