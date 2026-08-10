@@ -103,7 +103,7 @@ export default function Topup({ v }: { v: Vals }) {
                   <div onClick={v.applyCoupon} style={{ cursor: 'pointer', height: 44, padding: '0 18px', display: 'grid', placeItems: 'center', backdropFilter: 'blur(15px) saturate(1.4)', WebkitBackdropFilter: 'blur(15px) saturate(1.4)', background: 'var(--s-input,#181b24)', border: '1px solid var(--bd2,rgba(255,255,255,.14))', borderRadius: 11, fontSize: 13, fontWeight: 600, color: 'var(--t1,#eef0f5)', whiteSpace: 'nowrap' }}>ใช้โค้ด</div>
                 </div>
                 {v.couponError && <div style={{ fontSize: 11.5, color: '#f87171', marginTop: 7 }}>{v.couponError}</div>}
-                <div style={{ fontSize: 11, color: 'var(--t3b,#6c727e)', marginTop: 7 }}>ลอง: WELCOME10 · GVG50 · FLASH20</div>
+                {v.couponHint && <div style={{ fontSize: 11, color: 'var(--t3b,#6c727e)', marginTop: 7 }}>{v.couponHint}</div>}
               </div>
             )}
             {v.coupon && (

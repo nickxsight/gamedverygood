@@ -32,6 +32,7 @@ export type State = {
   user: User | null; points: number | null; authBusy: boolean; authError: string
   // admin-managed content
   isAdmin: boolean; pkgMap: Record<string, Pkg[]>; articles: ServerArticle[] | null
+  siteTicker: string[] | null; customCoupons: boolean
 }
 
 type Actions = {
@@ -253,7 +254,7 @@ export const useStore = create<Store>((set, get) => {
     saleEnd: Date.now() + 3 * 3600 * 1000 + 47 * 60 * 1000,
     chatLog: [{ id: 1, role: 'bot', kind: 'text', text: 'สวัสดีค่ะ! ฉันชื่อ Vera ผู้ช่วยเติมเกมของ gamedverygood ถามได้เลยว่าอยากเติมเกมอะไร เช็คสถานะออเดอร์ หรือสอบถามโปรโมชั่นค่ะ', time: '09:24' }],
     user: null, points: null, authBusy: false, authError: '',
-    isAdmin: false, pkgMap: {}, articles: null,
+    isAdmin: false, pkgMap: {}, articles: null, siteTicker: null, customCoupons: false,
 
     // ── actions ──
     set: patch,
@@ -282,7 +283,7 @@ export const useStore = create<Store>((set, get) => {
           const list = st.pkgMap[st.game]?.length ? st.pkgMap[st.game] : PKGS
           const pk = list.find((p) => p.id === st.pkg) || list[0]
           const creditUsed = Math.min(st.redeemCredit, pk.price)
-          api('/api/orders', { gid: st.game, pkg: st.pkg, ref, price: pk.price, amount: pk.amount, creditUsed })
+          api('/api/orders', { gid: st.game, pkg: st.pkg, ref, price: pk.price, amount: pk.amount, creditUsed, couponCode: st.coupon ? st.coupon.code : undefined })
             .then((r) => { if (r.ok) applyMe(r.data) })
         }
       }, 1900)
@@ -297,12 +298,19 @@ export const useStore = create<Store>((set, get) => {
       set((s) => { const f = { ...s.favorites }; if (f[id]) delete f[id]; else f[id] = true; return { favorites: f } })
       if (get().user) api('/api/me/favorites', { gameId: id, faved: willFav })
     },
-    applyCoupon: () => {
-      const code = (get().couponInput || '').trim().toUpperCase()
+    applyCoupon: async () => {
+      const st = get()
+      const code = (st.couponInput || '').trim().toUpperCase()
       if (!code) return
-      const c = COUPONS[code]
-      if (c) set({ coupon: { code, ...c }, couponError: '' })
-      else set({ coupon: null, couponError: 'ไม่พบโค้ดนี้ ลองใหม่อีกครั้ง' })
+      const list = st.pkgMap[st.game]?.length ? st.pkgMap[st.game] : PKGS
+      const pk = list.find((p) => p.id === st.pkg) || list[Math.min(2, list.length - 1)]
+      const r = await api('/api/coupons/validate', { code, price: pk.price })
+      if (r.ok) set({ coupon: { code: r.data.code, type: r.data.type, value: r.data.value, label: r.data.label }, couponError: '' })
+      else {
+        // Offline/dev fallback: the built-in demo codes.
+        if (r.status === 0 && COUPONS[code]) { set({ coupon: { code, ...COUPONS[code] }, couponError: '' }); return }
+        set({ coupon: null, couponError: (r.data && r.data.message) || 'ไม่พบโค้ดนี้ ลองใหม่อีกครั้ง' })
+      }
     },
     removeCoupon: () => set({ coupon: null, couponInput: '', couponError: '' }),
     claimCheckin: () => {
@@ -349,7 +357,7 @@ export const useStore = create<Store>((set, get) => {
       set({ pkgMap })
     },
     loadContent: async () => {
-      const [pk, ar] = await Promise.all([api('/api/packages'), api('/api/articles')])
+      const [pk, ar, si] = await Promise.all([api('/api/packages'), api('/api/articles'), api('/api/site')])
       if (pk.ok && pk.data) get().applyPackages(pk.data.packages || {})
       if (ar.ok && ar.data && Array.isArray(ar.data.articles)) {
         set({
@@ -359,6 +367,7 @@ export const useStore = create<Store>((set, get) => {
           })),
         })
       }
+      if (si.ok && si.data) set({ siteTicker: si.data.ticker || null, customCoupons: !!si.data.customCoupons })
     },
     login: async (email, password) => {
       set({ authBusy: true, authError: '' })

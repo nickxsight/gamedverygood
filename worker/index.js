@@ -28,6 +28,21 @@ async function migrate(db) {
   await db.prepare('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_line ON users(line_id)').run()
   // Denormalized package amount on orders, so history survives price edits.
   try { await db.prepare('ALTER TABLE orders ADD COLUMN amount TEXT').run() } catch { /* already exists */ }
+  // Member suspension flag.
+  try { await db.prepare('ALTER TABLE users ADD COLUMN banned INTEGER NOT NULL DEFAULT 0').run() } catch { /* already exists */ }
+  // Admin-managed coupons and site settings (key/value JSON).
+  await db.batch([
+    db.prepare(`CREATE TABLE IF NOT EXISTS coupons (
+      code TEXT PRIMARY KEY,
+      type TEXT NOT NULL DEFAULT 'pct',
+      value INTEGER NOT NULL,
+      label TEXT NOT NULL DEFAULT '',
+      min_price INTEGER NOT NULL DEFAULT 0,
+      active INTEGER NOT NULL DEFAULT 1,
+      used_count INTEGER NOT NULL DEFAULT 0
+    )`),
+    db.prepare('CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)'),
+  ])
   // Admin-managed content: per-game packages and news articles.
   await db.batch([
     db.prepare(`CREATE TABLE IF NOT EXISTS packages (
@@ -227,6 +242,8 @@ async function handleLine(request, env, path, url) {
         user = await db.prepare(
           'INSERT INTO users (email, name, pass_hash, salt, line_id) VALUES (?, ?, ?, ?, ?) RETURNING *',
         ).bind('line:' + prof.userId, (prof.displayName || 'LINE User').slice(0, 60), '', '', prof.userId).first()
+      } else if (user.banned) {
+        return failTo('บัญชีนี้ถูกระงับการใช้งาน กรุณาติดต่อทีมงาน')
       } else if (prof.displayName && prof.displayName !== user.name) {
         await db.prepare('UPDATE users SET name = ? WHERE id = ?').bind(prof.displayName.slice(0, 60), user.id).run()
       }
@@ -246,11 +263,30 @@ async function handleLine(request, env, path, url) {
   return json({ message: 'not found' }, 404)
 }
 
+// Built-in demo coupons — active only while no admin-created coupons exist.
+const DEFAULT_COUPONS = {
+  WELCOME10: { type: 'pct', value: 10, label: 'ส่วนลด 10% สำหรับสมาชิกใหม่' },
+  GVG50: { type: 'fixed', value: 50, label: 'ส่วนลด ฿50' },
+  FLASH20: { type: 'pct', value: 20, label: 'Flash Sale ลด 20%' },
+}
+const couponLabel = (type, value, label) => label || (type === 'pct' ? `ส่วนลด ${value}%` : `ส่วนลด ฿${value}`)
+
+async function getSetting(db, key) {
+  const row = await db.prepare('SELECT value FROM settings WHERE key = ?').bind(key).first()
+  if (!row) return null
+  try { return JSON.parse(row.value) } catch { return null }
+}
+
 // ── public content (packages + articles, admin-managed) ─────────────────────
 async function handleContent(env, path) {
   if (!env.DB) return json({ packages: {}, articles: [] })
   const db = env.DB
   await ensureSchema(db)
+  if (path === '/api/site') {
+    const ticker = await getSetting(db, 'ticker')
+    const nCoupons = await db.prepare('SELECT COUNT(*) AS n FROM coupons').first()
+    return json({ ticker: Array.isArray(ticker) && ticker.length ? ticker : null, customCoupons: nCoupons.n > 0 })
+  }
   if (path === '/api/packages') {
     const rows = await db.prepare('SELECT id, gid, amount, price, bonus, tag FROM packages ORDER BY gid, sort, id').all()
     const packages = {}
@@ -276,7 +312,7 @@ async function handleContent(env, path) {
 }
 
 // ── admin backoffice API ────────────────────────────────────────────────────
-async function handleAdmin(request, env, path) {
+async function handleAdmin(request, env, path, url) {
   if (!env.DB) return json({ message: 'ยังไม่ได้ตั้งค่าฐานข้อมูล' }, 503)
   const db = env.DB
   await ensureSchema(db)
@@ -286,18 +322,114 @@ async function handleAdmin(request, env, path) {
 
   if (path === '/api/admin/overview' && request.method === 'GET') {
     const users = await db.prepare('SELECT COUNT(*) AS n FROM users').first()
-    const orders = await db.prepare("SELECT COUNT(*) AS n, COALESCE(SUM(price),0) AS sum FROM orders WHERE status = 'success'").first()
+    const orders = await db.prepare(`SELECT
+        SUM(CASE WHEN status = 'success' THEN 1 ELSE 0 END) AS ok,
+        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending,
+        COALESCE(SUM(CASE WHEN status = 'success' THEN price ELSE 0 END), 0) AS sum
+      FROM orders`).first()
     const latest = await db.prepare(
-      `SELECT o.gid, o.pkg, o.amount, o.price, o.ref, o.created_at, u.email, u.name
+      `SELECT o.gid, o.pkg, o.amount, o.price, o.ref, o.status, o.created_at, u.email, u.name
        FROM orders o JOIN users u ON u.id = o.user_id ORDER BY o.id DESC LIMIT 15`,
     ).all()
     return json({
-      users: users.n, orders: orders.n, revenue: orders.sum,
+      users: users.n, orders: orders.ok || 0, pending: orders.pending || 0, revenue: orders.sum,
       latest: (latest.results || []).map((o) => ({
-        gid: o.gid, pkg: o.pkg, amount: o.amount || '', price: o.price, ref: o.ref,
+        gid: o.gid, pkg: o.pkg, amount: o.amount || '', price: o.price, ref: o.ref, status: o.status,
         createdAt: o.created_at, buyer: o.name || o.email,
       })),
     })
+  }
+
+  // ---- orders queue ----
+  if (path === '/api/admin/orders' && request.method === 'GET') {
+    const status = (url.searchParams.get('status') || 'all').slice(0, 10)
+    const qRaw = (url.searchParams.get('q') || '').trim().slice(0, 60)
+    const like = '%' + qRaw.replace(/[%_]/g, '') + '%'
+    const rows = await db.prepare(
+      `SELECT o.id, o.gid, o.pkg, o.amount, o.price, o.status, o.ref, o.created_at, u.email, u.name
+       FROM orders o JOIN users u ON u.id = o.user_id
+       WHERE (? = 'all' OR o.status = ?)
+         AND (? = '' OR o.ref LIKE ? OR u.email LIKE ? OR u.name LIKE ?)
+       ORDER BY o.id DESC LIMIT 150`,
+    ).bind(status, status, qRaw, like, like, like).all()
+    return json({ orders: rows.results || [] })
+  }
+  const ordMatch = path.match(/^\/api\/admin\/orders\/(\d{1,10})$/)
+  if (ordMatch && request.method === 'POST') {
+    const b = await readBody(request)
+    const status = String((b && b.status) || '')
+    if (!['success', 'pending', 'failed'].includes(status)) return json({ message: 'สถานะไม่ถูกต้อง' }, 400)
+    const row = await db.prepare('UPDATE orders SET status = ? WHERE id = ? RETURNING id, status').bind(status, Number(ordMatch[1])).first()
+    if (!row) return json({ message: 'ไม่พบออเดอร์' }, 404)
+    return json({ ok: true, id: row.id, status: row.status })
+  }
+
+  // ---- members ----
+  if (path === '/api/admin/users' && request.method === 'GET') {
+    const qRaw = (url.searchParams.get('q') || '').trim().slice(0, 60)
+    const like = '%' + qRaw.replace(/[%_]/g, '') + '%'
+    const rows = await db.prepare(
+      `SELECT u.id, u.email, u.name, u.points, u.redeem_credit, u.banned, u.line_id, u.created_at,
+        (SELECT COUNT(*) FROM orders o WHERE o.user_id = u.id AND o.status = 'success') AS orders_n,
+        (SELECT COALESCE(SUM(price),0) FROM orders o WHERE o.user_id = u.id AND o.status = 'success') AS spent
+       FROM users u
+       WHERE (? = '' OR u.email LIKE ? OR u.name LIKE ?)
+       ORDER BY u.id DESC LIMIT 150`,
+    ).bind(qRaw, like, like).all()
+    return json({ users: rows.results || [] })
+  }
+  const usrMatch = path.match(/^\/api\/admin\/users\/(\d{1,10})$/)
+  if (usrMatch && request.method === 'POST') {
+    const id = Number(usrMatch[1])
+    const b = await readBody(request)
+    const target = await db.prepare('SELECT * FROM users WHERE id = ?').bind(id).first()
+    if (!target) return json({ message: 'ไม่พบสมาชิก' }, 404)
+    const pointsDelta = Math.trunc(Number((b && b.pointsDelta) || 0)) || 0
+    const creditDelta = Math.trunc(Number((b && b.creditDelta) || 0)) || 0
+    const banned = (b && typeof b.banned === 'boolean') ? (b.banned ? 1 : 0) : target.banned
+    const row = await db.prepare(
+      'UPDATE users SET points = MAX(0, points + ?), redeem_credit = MAX(0, redeem_credit + ?), banned = ? WHERE id = ? RETURNING id, points, redeem_credit, banned',
+    ).bind(pointsDelta, creditDelta, banned, id).first()
+    return json({ ok: true, user: row })
+  }
+
+  // ---- coupons ----
+  if (path === '/api/admin/coupons' && request.method === 'GET') {
+    const rows = await db.prepare('SELECT * FROM coupons ORDER BY rowid DESC LIMIT 200').all()
+    return json({ coupons: rows.results || [] })
+  }
+  if (path === '/api/admin/coupons' && request.method === 'POST') {
+    const b = await readBody(request)
+    const code = String((b && b.code) || '').trim().toUpperCase().slice(0, 20)
+    const type = (b && b.type) === 'fixed' ? 'fixed' : 'pct'
+    const value = Math.trunc(Number((b && b.value) || 0))
+    const minPrice = Math.max(0, Math.trunc(Number((b && b.minPrice) || 0)))
+    const active = (b && b.active === false) ? 0 : 1
+    const label = String((b && b.label) || '').trim().slice(0, 100)
+    if (!/^[A-Z0-9]{3,20}$/.test(code)) return json({ message: 'โค้ดต้องเป็น A-Z/0-9 ยาว 3–20 ตัว' }, 400)
+    if (type === 'pct' && (value < 1 || value > 90)) return json({ message: 'ส่วนลด % ต้องอยู่ระหว่าง 1–90' }, 400)
+    if (type === 'fixed' && (value < 1 || value > 100000)) return json({ message: 'ส่วนลดบาทต้องอยู่ระหว่าง 1–100,000' }, 400)
+    await db.prepare(
+      `INSERT INTO coupons (code, type, value, label, min_price, active) VALUES (?, ?, ?, ?, ?, ?)
+       ON CONFLICT(code) DO UPDATE SET type = ?, value = ?, label = ?, min_price = ?, active = ?`,
+    ).bind(code, type, value, label, minPrice, active, type, value, label, minPrice, active).run()
+    return json({ ok: true })
+  }
+  const cpnMatch = path.match(/^\/api\/admin\/coupons\/([A-Z0-9]{3,20})$/)
+  if (cpnMatch && request.method === 'DELETE') {
+    await db.prepare('DELETE FROM coupons WHERE code = ?').bind(cpnMatch[1]).run()
+    return json({ ok: true })
+  }
+
+  // ---- site settings (marquee ticker) ----
+  if (path === '/api/admin/settings/ticker' && request.method === 'PUT') {
+    const b = await readBody(request)
+    const items = (Array.isArray(b && b.items) ? b.items : [])
+      .map((t) => String(t).trim().slice(0, 200)).filter(Boolean).slice(0, 12)
+    if (items.length === 0) await db.prepare("DELETE FROM settings WHERE key = 'ticker'").run()
+    else await db.prepare("INSERT INTO settings (key, value) VALUES ('ticker', ?) ON CONFLICT(key) DO UPDATE SET value = ?")
+      .bind(JSON.stringify(items), JSON.stringify(items)).run()
+    return json({ ok: true, ticker: items })
   }
 
   // Per-game packages: PUT replaces the game's package list, DELETE reverts
@@ -410,6 +542,7 @@ async function handleAccount(request, env, path) {
     if (!user) return json({ message: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' }, 401)
     const passHash = await hashPassword(password, user.salt)
     if (passHash !== user.pass_hash) return json({ message: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' }, 401)
+    if (user.banned) return json({ message: 'บัญชีนี้ถูกระงับการใช้งาน กรุณาติดต่อทีมงาน' }, 403)
     const token = randomToken()
     await db.prepare('INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)')
       .bind(token, user.id, Date.now() + SESSION_DAYS * 86400000).run()
@@ -422,13 +555,33 @@ async function handleAccount(request, env, path) {
     return json({ ok: true }, 200, { 'Set-Cookie': sessionCookie('', 0) })
   }
 
+  // Coupon validation — server-authoritative. Admin coupons take over from
+  // the built-in demo codes as soon as the first one exists.
+  if (path === '/api/coupons/validate' && request.method === 'POST') {
+    const b = await readBody(request)
+    const code = String((b && b.code) || '').trim().toUpperCase().slice(0, 20)
+    const price = Math.max(0, Number((b && b.price) || 0))
+    if (!code) return json({ message: 'กรอกโค้ดก่อน' }, 400)
+    const n = await db.prepare('SELECT COUNT(*) AS n FROM coupons').first()
+    if (n.n > 0) {
+      const c = await db.prepare('SELECT * FROM coupons WHERE code = ?').bind(code).first()
+      if (!c || !c.active) return json({ message: 'ไม่พบโค้ดนี้ ลองใหม่อีกครั้ง' }, 400)
+      if (price < c.min_price) return json({ message: `โค้ดนี้ใช้ได้กับยอดขั้นต่ำ ฿${c.min_price}` }, 400)
+      return json({ code: c.code, type: c.type, value: c.value, label: couponLabel(c.type, c.value, c.label) })
+    }
+    const d = DEFAULT_COUPONS[code]
+    if (!d) return json({ message: 'ไม่พบโค้ดนี้ ลองใหม่อีกครั้ง' }, 400)
+    return json({ code, ...d })
+  }
+
   // Everything below requires a session.
   const user = await currentUser(db, request)
   if (path === '/api/me' && request.method === 'GET') {
-    if (!user) return json({ user: null }, 200)
+    if (!user || user.banned) return json({ user: null }, 200)
     return json(await mePayload(db, user, env))
   }
   if (!user) return json({ message: 'กรุณาเข้าสู่ระบบ' }, 401)
+  if (user.banned) return json({ message: 'บัญชีนี้ถูกระงับการใช้งาน กรุณาติดต่อทีมงาน' }, 403)
 
   if (path === '/api/me/favorites' && request.method === 'POST') {
     const b = await readBody(request)
@@ -475,15 +628,18 @@ async function handleAccount(request, env, path) {
     const amount = ((b && b.amount) || '').slice(0, 20)
     const price = Math.max(0, Math.min(1000000, Number((b && b.price) || 0)))
     const creditUsed = Math.max(0, Math.min(user.redeem_credit, Number((b && b.creditUsed) || 0)))
+    const couponCode = String((b && b.couponCode) || '').trim().toUpperCase().slice(0, 20)
     if (!gid || !pkg || !ref) return json({ message: 'ข้อมูลออเดอร์ไม่ครบ' }, 400)
     // Record the order, earn 1 point per ฿10, burn any credit that was applied.
     const earned = Math.floor(price / 10)
-    await db.batch([
+    const stmts = [
       db.prepare('INSERT INTO orders (user_id, gid, pkg, ref, price, amount) VALUES (?, ?, ?, ?, ?, ?)')
         .bind(user.id, gid, pkg, ref, price, amount),
       db.prepare('UPDATE users SET points = points + ?, redeem_credit = redeem_credit - ? WHERE id = ?')
         .bind(earned, creditUsed, user.id),
-    ])
+    ]
+    if (couponCode) stmts.push(db.prepare('UPDATE coupons SET used_count = used_count + 1 WHERE code = ?').bind(couponCode))
+    await db.batch(stmts)
     const fresh = await db.prepare('SELECT * FROM users WHERE id = ?').bind(user.id).first()
     return json(await mePayload(db, fresh, env))
   }
@@ -510,7 +666,7 @@ export default {
       }
     }
 
-    if (path === '/api/packages' || path === '/api/articles') {
+    if (path === '/api/packages' || path === '/api/articles' || path === '/api/site') {
       try {
         return await handleContent(env, path)
       } catch (err) {
@@ -521,14 +677,14 @@ export default {
 
     if (path.startsWith('/api/admin/')) {
       try {
-        return await handleAdmin(request, env, path)
+        return await handleAdmin(request, env, path, url)
       } catch (err) {
         console.error('[admin]', path, err && err.message)
         return json({ message: 'เกิดข้อผิดพลาด ลองใหม่อีกครั้ง' }, 500)
       }
     }
 
-    if (path.startsWith('/api/auth/') || path === '/api/me' || path.startsWith('/api/me/') || path === '/api/orders') {
+    if (path.startsWith('/api/auth/') || path === '/api/me' || path.startsWith('/api/me/') || path === '/api/orders' || path === '/api/coupons/validate') {
       try {
         return await handleAccount(request, env, path)
       } catch (err) {

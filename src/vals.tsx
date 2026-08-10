@@ -329,14 +329,16 @@ export function computeVals(st: Store) {
     initial: r.name.charAt(0), avStyle: cover(r.c1, r.c2),
   }))
 
-  const promoTicker = [
-    { text: '🎁 สมาชิกใหม่รับโบนัส 10% ทุกการเติม · ใช้โค้ด WELCOME10' },
-    { text: '💎 จ่ายด้วย Crypto (USDT) รับส่วนลดเพิ่มอีก 5%' },
-    { text: '🔥 RoV ลดสูงสุด 30% เฉพาะสัปดาห์นี้' },
-    { text: '⚡ เติมเข้าบัญชีเกมอัตโนมัติภายในไม่กี่วินาที' },
-    { text: '👑 สมาชิก VIP รับแต้มสะสมทุกการเติม แลกของรางวัลได้' },
-    { text: '📰 ข่าวใหม่: อัปเดตแพ็กเกจ Free Fire & Valorant แล้ววันนี้' },
-  ]
+  const promoTicker = (s.siteTicker && s.siteTicker.length)
+    ? s.siteTicker.map((t) => ({ text: t }))
+    : [
+      { text: '🎁 สมาชิกใหม่รับโบนัส 10% ทุกการเติม · ใช้โค้ด WELCOME10' },
+      { text: '💎 จ่ายด้วย Crypto (USDT) รับส่วนลดเพิ่มอีก 5%' },
+      { text: '🔥 RoV ลดสูงสุด 30% เฉพาะสัปดาห์นี้' },
+      { text: '⚡ เติมเข้าบัญชีเกมอัตโนมัติภายในไม่กี่วินาที' },
+      { text: '👑 สมาชิก VIP รับแต้มสะสมทุกการเติม แลกของรางวัลได้' },
+      { text: '📰 ข่าวใหม่: อัปเดตแพ็กเกจ Free Fire & Valorant แล้ววันนี้' },
+    ]
   const tk = TICKER[s.tickerIdx % TICKER.length]
   const ticker = { key: 'tk' + s.tickerIdx, text: `${tk.who} เพิ่งเติม ${tk.g} ${tk.a} · ${tk.t}` }
 
@@ -646,6 +648,7 @@ export function computeVals(st: Store) {
     subtotal, discount, creditUsed, hasDiscount: discount > 0, hasCredit: creditUsed > 0,
     coupon: s.coupon, noCoupon: !s.coupon, couponLabel: s.coupon ? s.coupon.label : '', couponCode: s.coupon ? s.coupon.code : '',
     couponInput: s.couponInput, couponError: s.couponError,
+    couponHint: s.customCoupons ? '' : 'ลอง: WELCOME10 · GVG50 · FLASH20',
     setCoupon: (e: any) => st.set({ couponInput: e.target.value, couponError: '' }),
     applyCoupon: () => st.applyCoupon(), removeCoupon: () => st.removeCoupon(),
     flashDeals, saleHH, saleMM, saleSS,
