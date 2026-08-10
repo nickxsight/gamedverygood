@@ -57,14 +57,14 @@ export default function Nav({ v }: { v: Vals }) {
           {v.showWallet && (
             <div onClick={v.goHistory} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '0 6px 0 16px', height: 42, backdropFilter: 'blur(15px) saturate(1.4)', WebkitBackdropFilter: 'blur(15px) saturate(1.4)', background: 'var(--s-input,#181b24)', border: '1px solid var(--bd,rgba(255,255,255,.09))', borderRadius: 13 }}>
               <div style={{ lineHeight: 1.15, textAlign: 'right' }}>
-                <div style={{ fontSize: 9.5, color: 'var(--t3b,#6c727e)', letterSpacing: '.3px' }}>ยอดเงิน</div>
-                <div style={{ fontFamily: "'Space Grotesk','IBM Plex Sans Thai'", fontWeight: 600, fontSize: 14, color: 'var(--t1,#eef0f5)' }}>฿1,250.00</div>
+                <div style={{ fontSize: 9.5, color: 'var(--t3b,#6c727e)', letterSpacing: '.3px' }}>{v.walletSub}</div>
+                <div style={{ fontFamily: "'Space Grotesk','IBM Plex Sans Thai'", fontWeight: 600, fontSize: 14, color: 'var(--t1,#eef0f5)' }}>{v.walletLabel}</div>
               </div>
               <div onClick={(e) => { e.stopPropagation(); v.goTopup() }} style={{ cursor: 'pointer', height: 32, padding: '0 16px', display: 'grid', placeItems: 'center', background: 'var(--acc,#4f46e5)', borderRadius: 10, fontWeight: 600, fontSize: 12.5, color: '#fff' }}>เติมเงิน</div>
             </div>
           )}
           <div data-desk-only onClick={v.avatarClick} style={{ width: 42, height: 42, borderRadius: 13, backdropFilter: 'blur(15px) saturate(1.4)', WebkitBackdropFilter: 'blur(15px) saturate(1.4)', background: 'var(--s-input,#181b24)', border: '1px solid var(--bd,rgba(255,255,255,.09))', display: 'grid', placeItems: 'center', fontFamily: "'Space Grotesk','IBM Plex Sans Thai'", fontWeight: 600, fontSize: 13, color: 'var(--acc,#4f46e5)', cursor: 'pointer' }}>
-            {v.loggedIn ? 'PG' : <span style={{ fontSize: 18 }}>👤</span>}
+            {v.loggedIn ? v.avatarLabel : <span style={{ fontSize: 18 }}>👤</span>}
           </div>
         </div>
       </div>

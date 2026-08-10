@@ -10,6 +10,8 @@ export type ChatMsg = {
 }
 export type Toast = { msg: string; icon: string; k: number }
 
+export type User = { email: string; name: string }
+
 export type State = {
   route: string; game: string; pkg: string; playerId: string; serverId: string
   pay: string; news: string; tool: string; q: string
@@ -25,6 +27,8 @@ export type State = {
   chatOpen: boolean; chatInput: string; chatTyping: boolean; chatPendingImg: string | null
   chatUnread: number; liveCount: number; toast: Toast | null; chatLog: ChatMsg[]
   saleEnd: number
+  // membership
+  user: User | null; points: number | null; authBusy: boolean; authError: string
 }
 
 type Actions = {
@@ -46,8 +50,12 @@ type Actions = {
   openArticle: (id: string) => void
   openTool: (id: string) => void
   closeTool: () => void
-  doLogin: () => void
   toggleTheme: () => void
+  // membership
+  loadMe: () => Promise<void>
+  login: (email: string, password: string) => Promise<boolean>
+  register: (email: string, password: string, name: string) => Promise<boolean>
+  logout: () => Promise<void>
   showToast: (msg: string, icon?: string) => void
   // chat
   toggleChat: () => void
@@ -143,8 +151,42 @@ ${hist}
 ตอบข้อความล่าสุดของลูกค้าในฐานะ Vera:`
 }
 
+// ── membership API helpers ───────────────────────────────────────────────────
+async function api(path: string, body?: unknown): Promise<{ ok: boolean; status: number; data: any }> {
+  try {
+    const resp = await fetch(path, body === undefined
+      ? { method: 'GET' }
+      : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    const data = await resp.json().catch(() => ({}))
+    return { ok: resp.ok, status: resp.status, data }
+  } catch {
+    return { ok: false, status: 0, data: { message: 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ ลองใหม่อีกครั้ง' } }
+  }
+}
+
+function fmtOrderTime(iso: string): string {
+  const d = new Date(iso.includes('T') ? iso : iso.replace(' ', 'T') + 'Z')
+  if (isNaN(d.getTime())) return iso
+  return d.toLocaleString('th-TH', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+}
+
 export const useStore = create<Store>((set, get) => {
   const patch = (p: Partial<State> | ((s: State) => Partial<State>)) => set(p as any)
+
+  // Hydrate store fields from a /api/me-shaped payload.
+  const applyMe = (d: any) => {
+    if (!d || !d.user) return
+    const favorites: Record<string, boolean> = {}
+    for (const id of d.favorites || []) favorites[id] = true
+    const myOrders: Order[] = (d.orders || []).map((o: any) => ({
+      gid: o.gid, pkg: o.pkg, status: o.status, ref: o.ref, time: fmtOrderTime(o.createdAt),
+    }))
+    set({
+      user: d.user, loggedIn: true, points: d.points, redeemCredit: d.redeemCredit,
+      checkedDays: d.checkedDays, claimedToday: d.claimedToday, favorites,
+      myOrders, redeemedPts: 0, authError: '',
+    })
+  }
   const pushMsg: Actions['pushMsg'] = (msg) => set((s) => {
     const last = s.chatLog[s.chatLog.length - 1]
     return { chatLog: [...s.chatLog, { id: (last ? last.id : 0) + 1, time: nowTime(), ...msg } as ChatMsg] }
@@ -204,6 +246,7 @@ export const useStore = create<Store>((set, get) => {
     chatOpen: false, chatInput: '', chatTyping: false, chatPendingImg: null, chatUnread: 1, liveCount: 1287, toast: null,
     saleEnd: Date.now() + 3 * 3600 * 1000 + 47 * 60 * 1000,
     chatLog: [{ id: 1, role: 'bot', kind: 'text', text: 'สวัสดีค่ะ! ฉันชื่อ Vera ผู้ช่วยเติมเกมของ gamedverygood ถามได้เลยว่าอยากเติมเกมอะไร เช็คสถานะออเดอร์ หรือสอบถามโปรโมชั่นค่ะ', time: '09:24' }],
+    user: null, points: null, authBusy: false, authError: '',
 
     // ── actions ──
     set: patch,
@@ -227,6 +270,13 @@ export const useStore = create<Store>((set, get) => {
         const ref = '#' + (st.payRef || ('GVG' + Math.floor(8900 + Math.random() * 99)))
         const newOrder: Order = { gid: st.game, pkg: st.pkg, status: 'success', time: 'เมื่อสักครู่', ref }
         set({ payStatus: 'success', myOrders: [newOrder, ...orders()], coupon: null, couponInput: '', redeemCredit: 0 })
+        // Logged-in: persist the order server-side (earns points, burns credit).
+        if (st.user) {
+          const pk = PKGS.find((p) => p.id === st.pkg) || PKGS[0]
+          const creditUsed = Math.min(st.redeemCredit, pk.price)
+          api('/api/orders', { gid: st.game, pkg: st.pkg, ref, price: pk.price, creditUsed })
+            .then((r) => { if (r.ok) applyMe(r.data) })
+        }
       }, 1900)
     },
     cancelPay: () => { if (timers.payWatch) clearTimeout(timers.payWatch); set({ payStatus: 'idle' }) },
@@ -237,6 +287,7 @@ export const useStore = create<Store>((set, get) => {
       const gm = GAMES.find((x) => x.id === id)
       showToast(willFav ? 'เพิ่ม ' + (gm ? gm.name : '') + ' ในรายการโปรด' : 'นำออกจากรายการโปรดแล้ว', willFav ? '♥' : '♡')
       set((s) => { const f = { ...s.favorites }; if (f[id]) delete f[id]; else f[id] = true; return { favorites: f } })
+      if (get().user) api('/api/me/favorites', { gameId: id, faved: willFav })
     },
     applyCoupon: () => {
       const code = (get().couponInput || '').trim().toUpperCase()
@@ -246,16 +297,77 @@ export const useStore = create<Store>((set, get) => {
       else set({ coupon: null, couponError: 'ไม่พบโค้ดนี้ ลองใหม่อีกครั้ง' })
     },
     removeCoupon: () => set({ coupon: null, couponInput: '', couponError: '' }),
-    claimCheckin: () => { if (get().claimedToday) return; set((s) => ({ claimedToday: true, checkedDays: Math.min(7, s.checkedDays + 1) })) },
-    redeemPoints: (cost, credit) => set((s) => { if ((1250 + s.checkedDays * 20 - s.redeemedPts) < cost) return {}; return { redeemCredit: s.redeemCredit + credit, redeemedPts: s.redeemedPts + cost } }),
+    claimCheckin: () => {
+      if (get().claimedToday) return
+      if (get().user) {
+        api('/api/me/checkin', {}).then((r) => {
+          if (r.ok) {
+            set({ points: r.data.points, checkedDays: r.data.checkedDays, claimedToday: true })
+            showToast('เช็คอินสำเร็จ +' + r.data.reward + ' แต้ม', '⭐')
+          } else if (r.status === 409) set({ claimedToday: true })
+        })
+        return
+      }
+      set((s) => ({ claimedToday: true, checkedDays: Math.min(7, s.checkedDays + 1) }))
+    },
+    redeemPoints: (cost, credit) => {
+      if (get().user) {
+        api('/api/me/redeem', { cost }).then((r) => {
+          if (r.ok) { set({ points: r.data.points, redeemCredit: r.data.redeemCredit }); showToast('แลกแต้มสำเร็จ', '🎁') }
+          else showToast(r.data.message || 'แลกแต้มไม่สำเร็จ', '⚠️')
+        })
+        return
+      }
+      set((s) => { if ((1250 + s.checkedDays * 20 - s.redeemedPts) < cost) return {}; return { redeemCredit: s.redeemCredit + credit, redeemedPts: s.redeemedPts + cost } })
+    },
     copyRef: (code) => { try { navigator.clipboard?.writeText(code) } catch { /* */ } set({ refCopied: true }); setTimeout(() => set({ refCopied: false }), 1800) },
     doLookup: () => set({ lookupDone: true }),
     openArticle: (id) => { set({ article: id, route: 'article' }); scrollTop() },
     openTool: (id) => set({ toolModal: id }),
     closeTool: () => set({ toolModal: null }),
-    doLogin: () => set({ loggedIn: true, showLogin: false }),
     toggleTheme: () => set((s) => { const next = s.theme === 'day' ? 'night' : 'day'; try { localStorage.setItem('gvg-theme', next) } catch { /* */ } return { theme: next } }),
     showToast,
+
+    // ── membership ──
+    loadMe: async () => {
+      const r = await api('/api/me')
+      if (r.ok && r.data && r.data.user) applyMe(r.data)
+    },
+    login: async (email, password) => {
+      set({ authBusy: true, authError: '' })
+      const r = await api('/api/auth/login', { email, password })
+      set({ authBusy: false })
+      if (r.ok) {
+        applyMe(r.data)
+        set({ showLogin: false })
+        showToast('ยินดีต้อนรับกลับมา 👋', '✓')
+        return true
+      }
+      set({ authError: (r.data && r.data.message) || 'เข้าสู่ระบบไม่สำเร็จ' })
+      return false
+    },
+    register: async (email, password, name) => {
+      set({ authBusy: true, authError: '' })
+      const r = await api('/api/auth/register', { email, password, name })
+      set({ authBusy: false })
+      if (r.ok) {
+        applyMe(r.data)
+        set({ showLogin: false })
+        showToast('สมัครสมาชิกสำเร็จ รับ 100 แต้มต้อนรับ 🎉', '✓')
+        return true
+      }
+      set({ authError: (r.data && r.data.message) || 'สมัครสมาชิกไม่สำเร็จ' })
+      return false
+    },
+    logout: async () => {
+      await api('/api/auth/logout', {})
+      set({
+        user: null, loggedIn: false, points: null, myOrders: null,
+        favorites: { freefire: true, ro3: true }, checkedDays: 3, claimedToday: false,
+        redeemCredit: 0, redeemedPts: 0, authError: '',
+      })
+      showToast('ออกจากระบบแล้ว', '👋')
+    },
 
     // ── chat ──
     toggleChat: () => set((s) => ({ chatOpen: !s.chatOpen, chatUnread: 0 })),

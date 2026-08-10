@@ -6,10 +6,34 @@ export default function History({ v }: { v: Vals }) {
   return (
     <section data-screen-label="History" style={{ maxWidth: 1240, margin: '0 auto', padding: '40px var(--wrap-pad,28px) 0' }}>
       <div onClick={v.goTopup} style={{ cursor: 'pointer', fontSize: 13.5, fontWeight: 500, color: 'var(--t3,#878e9a)', marginBottom: 18 }}>← กลับไปเติมเกม</div>
-      <div style={{ marginBottom: 26 }}>
-        <div style={{ fontSize: 12.5, letterSpacing: '1.5px', color: 'var(--acc,#4f46e5)', fontWeight: 600, marginBottom: 10 }}>MY ACCOUNT</div>
-        <h1 data-h1 style={{ fontFamily: "'Space Grotesk','IBM Plex Sans Thai'", fontWeight: 700, fontSize: 40, margin: 0, letterSpacing: '-1.2px' }}>ประวัติการเติม</h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16, flexWrap: 'wrap', marginBottom: 26 }}>
+        <div>
+          <div style={{ fontSize: 12.5, letterSpacing: '1.5px', color: 'var(--acc,#4f46e5)', fontWeight: 600, marginBottom: 10 }}>MY ACCOUNT</div>
+          <h1 data-h1 style={{ fontFamily: "'Space Grotesk','IBM Plex Sans Thai'", fontWeight: 700, fontSize: 40, margin: 0, letterSpacing: '-1.2px' }}>ประวัติการเติม</h1>
+        </div>
+        {v.isMember && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ textAlign: 'right', lineHeight: 1.3 }}>
+              <div style={{ fontWeight: 600, fontSize: 14 }}>{v.user!.name || 'สมาชิก'}</div>
+              <div style={{ fontSize: 12, color: 'var(--t3,#878e9a)' }}>{v.user!.email}</div>
+            </div>
+            <div onClick={v.doLogout} style={{ cursor: 'pointer', height: 40, padding: '0 16px', display: 'grid', placeItems: 'center', backdropFilter: 'blur(15px) saturate(1.4)', WebkitBackdropFilter: 'blur(15px) saturate(1.4)', background: 'var(--s-card,#13151d)', border: '1.5px solid var(--bd2,rgba(255,255,255,.12))', borderRadius: 11, fontSize: 13, fontWeight: 600, color: 'var(--t2b,#c4c8d2)' }}>ออกจากระบบ</div>
+          </div>
+        )}
       </div>
+
+      {!v.isMember && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap', padding: '16px 20px', marginBottom: 26, backdropFilter: 'blur(15px) saturate(1.4)', WebkitBackdropFilter: 'blur(15px) saturate(1.4)', background: 'rgba(124,131,255,.1)', border: '1px solid rgba(124,131,255,.35)', borderRadius: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+            <span style={{ fontSize: 22 }}>👤</span>
+            <div style={{ lineHeight: 1.4 }}>
+              <div style={{ fontWeight: 600, fontSize: 14.5 }}>ข้อมูลด้านล่างเป็นตัวอย่างสำหรับผู้เยี่ยมชม</div>
+              <div style={{ fontSize: 12.5, color: 'var(--t2,#9aa1ad)' }}>สมัครสมาชิกฟรีเพื่อบันทึกประวัติจริง สะสมแต้ม เช็คอินรายวัน และรับ 100 แต้มต้อนรับ</div>
+            </div>
+          </div>
+          <div onClick={v.openLogin} style={{ cursor: 'pointer', height: 42, padding: '0 20px', display: 'grid', placeItems: 'center', background: 'var(--acc,#4f46e5)', borderRadius: 11, fontSize: 13.5, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap' }}>เข้าสู่ระบบ / สมัครสมาชิก</div>
+        </div>
+      )}
 
       {/* account summary */}
       <div data-resp="g3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16, marginBottom: 30 }}>
@@ -102,6 +126,11 @@ export default function History({ v }: { v: Vals }) {
       </div>
 
       <div style={{ fontFamily: "'Space Grotesk','IBM Plex Sans Thai'", fontWeight: 600, fontSize: 18, marginBottom: 14 }}>รายการล่าสุด</div>
+      {v.orders.length === 0 && (
+        <div style={{ padding: 40, textAlign: 'center', color: 'var(--t3b,#6c727e)', fontSize: 14, backdropFilter: 'blur(15px) saturate(1.4)', WebkitBackdropFilter: 'blur(15px) saturate(1.4)', background: 'var(--s-card,#13151d)', border: '1px solid var(--bd,rgba(255,255,255,.09))', borderRadius: 16 }}>
+          ยังไม่มีประวัติการเติม — <span onClick={v.goTopup} style={{ color: 'var(--acc,#4f46e5)', fontWeight: 600, cursor: 'pointer' }}>เติมเกมครั้งแรกเลย →</span>
+        </div>
+      )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {v.orders.map((o: any) => (
           <div key={o.key} style={{ display: 'flex', alignItems: 'center', gap: 16, backdropFilter: 'blur(15px) saturate(1.4)', WebkitBackdropFilter: 'blur(15px) saturate(1.4)', background: 'var(--s-card,#13151d)', border: '1px solid var(--bd,rgba(255,255,255,.09))', borderRadius: 16, padding: '16px 18px', flexWrap: 'wrap' }}>

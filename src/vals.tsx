@@ -419,10 +419,12 @@ export function computeVals(st: Store) {
   const totalSpent = st.orders().filter((o) => o.status === 'success').reduce((a, o) => {
     const op = PKGS.find((p) => p.id === o.pkg) || PKGS[0]; return a + op.price
   }, 0)
+  // Points: server-authoritative when logged in, demo formula for guests.
+  const pointsBal = s.points != null ? s.points : (1250 + s.checkedDays * 20 - s.redeemedPts)
   const acctStats = [
     { label: 'ยอดเติมสะสม', value: '฿' + totalSpent.toLocaleString(), color: 'var(--t1,#eef0f5)' },
     { label: 'จำนวนรายการ', value: String(st.orders().length), color: 'var(--t1,#eef0f5)' },
-    { label: 'แต้มสะสม', value: (1250 + s.checkedDays * 20 - s.redeemedPts).toLocaleString(), color: 'var(--acc,#4f46e5)' },
+    { label: 'แต้มสะสม', value: pointsBal.toLocaleString(), color: 'var(--acc,#4f46e5)' },
   ]
 
   // ---- membership tier ----
@@ -440,7 +442,6 @@ export function computeVals(st: Store) {
   const tierNeed = nextTier ? (nextTier.min - totalSpent) : 0
 
   // ---- points / redeem ----
-  const pointsBal = 1250 + s.checkedDays * 20 - s.redeemedPts
   const redeemOpts = [
     { cost: 500, credit: 50, label: 'เครดิต ฿50' },
     { cost: 1000, credit: 120, label: 'เครดิต ฿120' },
@@ -646,9 +647,14 @@ export function computeVals(st: Store) {
     doLookup: () => st.doLookup(), lookupResult,
     lookupFound: !!(lookupResult && (lookupResult as any).ok), lookupMissing: !!(lookupResult && !(lookupResult as any).ok),
     loggedIn: s.loggedIn, notLoggedIn: !s.loggedIn, showLogin: s.showLogin,
-    openLogin: () => st.set({ showLogin: true }), closeLogin: () => st.set({ showLogin: false }),
-    doLogin: () => st.doLogin(),
+    openLogin: () => st.set({ showLogin: true }), closeLogin: () => st.set({ showLogin: false, authError: '' }),
     avatarClick: () => { if (st.loggedIn) st.go('history'); else st.set({ showLogin: true }) },
+    // membership
+    user: s.user, isMember: !!s.user,
+    avatarLabel: s.user ? ((s.user.name || s.user.email).trim().slice(0, 2).toUpperCase()) : 'PG',
+    walletLabel: s.user ? '฿' + s.redeemCredit.toLocaleString() + '.00' : '฿1,250.00',
+    walletSub: s.user ? 'เครดิตของฉัน' : 'ยอดเงิน',
+    doLogout: () => st.logout(),
     isArticleRoute: s.route === 'article', article: articleData,
     toolModalData, closeTool: () => st.closeTool(),
     isSensTool: toolModalData && toolModalData.id === 't1',

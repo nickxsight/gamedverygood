@@ -1,29 +1,89 @@
+import { useState } from 'react'
 import type { Vals } from '../vals'
+import { useStore } from '../store'
 import { LogoMark } from './Logo'
 
+const inputStyle = {
+  width: '100%', height: 48, padding: '0 16px', marginBottom: 14,
+  background: 'var(--s-inset,#161922)', border: '1.5px solid var(--bd2,rgba(255,255,255,.12))',
+  borderRadius: 12, color: 'var(--t1,#eef0f5)', fontSize: 14, fontFamily: "'IBM Plex Sans Thai'", outline: 'none',
+} as const
+
 export default function LoginModal({ v }: { v: Vals }) {
+  const login = useStore((s) => s.login)
+  const register = useStore((s) => s.register)
+  const authBusy = useStore((s) => s.authBusy)
+  const authError = useStore((s) => s.authError)
+  const showToast = useStore((s) => s.showToast)
+  const setStore = useStore((s) => s.set)
+
+  const [mode, setMode] = useState<'login' | 'register'>('login')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [name, setName] = useState('')
+
   if (!v.showLogin) return null
+
+  const submit = () => {
+    if (authBusy) return
+    if (mode === 'login') login(email, password)
+    else register(email, password, name)
+  }
+  const onKey = (e: React.KeyboardEvent) => { if (e.key === 'Enter') submit() }
+  const switchMode = (m: 'login' | 'register') => { setMode(m); setStore({ authError: '' }) }
+
   return (
     <div onClick={v.closeLogin} style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(4,5,9,.7)', backdropFilter: 'blur(6px)', display: 'grid', placeItems: 'center', padding: 20 }}>
-      <div onClick={v.noop} style={{ width: '100%', maxWidth: 400, backdropFilter: 'blur(15px) saturate(1.4)', WebkitBackdropFilter: 'blur(15px) saturate(1.4)', background: 'var(--s-card,#13151d)', border: '1px solid var(--bd2,rgba(255,255,255,.12))', borderRadius: 22, padding: 32, boxShadow: '0 40px 90px -30px rgba(0,0,0,.8)' }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 400, backdropFilter: 'blur(15px) saturate(1.4)', WebkitBackdropFilter: 'blur(15px) saturate(1.4)', background: 'var(--s-card,#13151d)', border: '1px solid var(--bd2,rgba(255,255,255,.12))', borderRadius: 22, padding: 32, boxShadow: '0 40px 90px -30px rgba(0,0,0,.8)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <LogoMark />
-            <div style={{ fontFamily: "'Space Grotesk','IBM Plex Sans Thai'", fontWeight: 700, fontSize: 17 }}>เข้าสู่ระบบ</div>
+            <div style={{ fontFamily: "'Space Grotesk','IBM Plex Sans Thai'", fontWeight: 700, fontSize: 17 }}>{mode === 'login' ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก'}</div>
           </div>
           <div onClick={v.closeLogin} style={{ cursor: 'pointer', color: 'var(--t3b,#6c727e)', fontSize: 22 }}>×</div>
         </div>
-        <p style={{ fontSize: 13, color: 'var(--t3,#878e9a)', margin: '0 0 22px' }}>เข้าสู่ระบบเพื่อสะสมแต้ม รับโบนัส และดูประวัติการเติม</p>
-        <label style={{ fontSize: 12, color: 'var(--t3,#878e9a)', display: 'block', marginBottom: 7 }}>อีเมล / เบอร์โทร</label>
-        <input placeholder="you@example.com" style={{ width: '100%', height: 48, padding: '0 16px', marginBottom: 14, background: 'var(--s-inset,#161922)', border: '1.5px solid var(--bd2,rgba(255,255,255,.12))', borderRadius: 12, color: 'var(--t1,#eef0f5)', fontSize: 14, fontFamily: "'IBM Plex Sans Thai'", outline: 'none' }} />
-        <label style={{ fontSize: 12, color: 'var(--t3,#878e9a)', display: 'block', marginBottom: 7 }}>รหัสผ่าน</label>
-        <input type="password" placeholder="••••••••" style={{ width: '100%', height: 48, padding: '0 16px', marginBottom: 20, background: 'var(--s-inset,#161922)', border: '1.5px solid var(--bd2,rgba(255,255,255,.12))', borderRadius: 12, color: 'var(--t1,#eef0f5)', fontSize: 14, fontFamily: "'IBM Plex Sans Thai'", outline: 'none' }} />
-        <div onClick={v.doLogin} style={{ cursor: 'pointer', height: 50, display: 'grid', placeItems: 'center', background: 'var(--acc,#4f46e5)', borderRadius: 13, fontWeight: 600, fontSize: 15, color: '#fff', boxShadow: '0 12px 30px -14px var(--acc,#4f46e5)', marginBottom: 14 }}>เข้าสู่ระบบ</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          <div onClick={v.doLogin} style={{ cursor: 'pointer', height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'var(--s-inset,#161922)', border: '1px solid var(--bd2,rgba(255,255,255,.12))', borderRadius: 11, fontSize: 13, fontWeight: 500, color: 'var(--t2b,#c4c8d2)' }}>🟢 LINE</div>
-          <div onClick={v.doLogin} style={{ cursor: 'pointer', height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'var(--s-inset,#161922)', border: '1px solid var(--bd2,rgba(255,255,255,.12))', borderRadius: 11, fontSize: 13, fontWeight: 500, color: 'var(--t2b,#c4c8d2)' }}>🔵 Google</div>
+        <p style={{ fontSize: 13, color: 'var(--t3,#878e9a)', margin: '0 0 18px' }}>
+          {mode === 'login'
+            ? 'เข้าสู่ระบบเพื่อสะสมแต้ม รับโบนัส และดูประวัติการเติม'
+            : 'สมัครฟรี รับ 100 แต้มต้อนรับ สะสมแต้มทุกการเติมและเช็คอินรายวัน'}
+        </p>
+
+        {/* mode tabs */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, padding: 4, background: 'var(--s-inset,#161922)', borderRadius: 12, marginBottom: 18 }}>
+          {(['login', 'register'] as const).map((m) => (
+            <div key={m} onClick={() => switchMode(m)} style={{ cursor: 'pointer', height: 38, display: 'grid', placeItems: 'center', borderRadius: 9, fontSize: 13, fontWeight: 600, transition: 'all .2s', background: mode === m ? 'var(--acc,#4f46e5)' : 'transparent', color: mode === m ? '#fff' : 'var(--t3,#878e9a)' }}>
+              {m === 'login' ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก'}
+            </div>
+          ))}
         </div>
-        <div style={{ textAlign: 'center', fontSize: 12.5, color: 'var(--t3b,#6c727e)', marginTop: 18 }}>ยังไม่มีบัญชี? <span style={{ color: 'var(--acc,#4f46e5)', fontWeight: 600, cursor: 'pointer' }}>สมัครสมาชิก</span></div>
+
+        {mode === 'register' && (
+          <>
+            <label style={{ fontSize: 12, color: 'var(--t3,#878e9a)', display: 'block', marginBottom: 7 }}>ชื่อที่ใช้แสดง</label>
+            <input value={name} onChange={(e) => setName(e.target.value)} onKeyDown={onKey} placeholder="เช่น ProGamer" style={inputStyle} />
+          </>
+        )}
+        <label style={{ fontSize: 12, color: 'var(--t3,#878e9a)', display: 'block', marginBottom: 7 }}>อีเมล</label>
+        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={onKey} placeholder="you@example.com" style={inputStyle} />
+        <label style={{ fontSize: 12, color: 'var(--t3,#878e9a)', display: 'block', marginBottom: 7 }}>รหัสผ่าน {mode === 'register' && <span style={{ color: 'var(--t3b,#6c727e)' }}>(อย่างน้อย 6 ตัวอักษร)</span>}</label>
+        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={onKey} placeholder="••••••••" style={{ ...inputStyle, marginBottom: authError ? 10 : 20 }} />
+
+        {authError && (
+          <div style={{ marginBottom: 14, padding: '10px 14px', background: 'rgba(248,113,113,.1)', border: '1px solid rgba(248,113,113,.3)', borderRadius: 11, fontSize: 12.5, color: '#f87171' }}>{authError}</div>
+        )}
+
+        <div onClick={submit} style={{ cursor: authBusy ? 'wait' : 'pointer', opacity: authBusy ? .7 : 1, height: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, background: 'var(--acc,#4f46e5)', borderRadius: 13, fontWeight: 600, fontSize: 15, color: '#fff', boxShadow: '0 12px 30px -14px var(--acc,#4f46e5)', marginBottom: 14 }}>
+          {authBusy && <span style={{ width: 15, height: 15, border: '2px solid #fff', borderRightColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'gvgSpin .8s linear infinite' }} />}
+          {authBusy ? 'กำลังดำเนินการ...' : (mode === 'login' ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก ฟรี')}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div onClick={() => showToast('LINE Login กำลังจะมาเร็วๆ นี้', '🔜')} style={{ cursor: 'pointer', height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'var(--s-inset,#161922)', border: '1px solid var(--bd2,rgba(255,255,255,.12))', borderRadius: 11, fontSize: 13, fontWeight: 500, color: 'var(--t2b,#c4c8d2)' }}>🟢 LINE</div>
+          <div onClick={() => showToast('Google Login กำลังจะมาเร็วๆ นี้', '🔜')} style={{ cursor: 'pointer', height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'var(--s-inset,#161922)', border: '1px solid var(--bd2,rgba(255,255,255,.12))', borderRadius: 11, fontSize: 13, fontWeight: 500, color: 'var(--t2b,#c4c8d2)' }}>🔵 Google</div>
+        </div>
+        <div style={{ textAlign: 'center', fontSize: 12.5, color: 'var(--t3b,#6c727e)', marginTop: 18 }}>
+          {mode === 'login' ? <>ยังไม่มีบัญชี? <span onClick={() => switchMode('register')} style={{ color: 'var(--acc,#4f46e5)', fontWeight: 600, cursor: 'pointer' }}>สมัครสมาชิก</span></>
+            : <>มีบัญชีอยู่แล้ว? <span onClick={() => switchMode('login')} style={{ color: 'var(--acc,#4f46e5)', fontWeight: 600, cursor: 'pointer' }}>เข้าสู่ระบบ</span></>}
+        </div>
       </div>
     </div>
   )

@@ -28,13 +28,15 @@ export default function App() {
   const set = st.set
   const rootRef = useRef<HTMLDivElement>(null)
 
-  // Restore persisted theme once.
+  // Restore persisted theme + membership session once.
+  const loadMe = useStore((s) => s.loadMe)
   useEffect(() => {
     try {
       const t = localStorage.getItem('gvg-theme')
       if (t === 'day' || t === 'night') set({ theme: t })
     } catch { /* */ }
-  }, [set])
+    loadMe()
+  }, [set, loadMe])
 
   // applyTheme: data-theme + body bg + accent vars.
   useEffect(() => {

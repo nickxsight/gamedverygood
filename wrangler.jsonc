@@ -19,6 +19,15 @@
   "vars": {
     "ANTHROPIC_MODEL": "claude-sonnet-5"
   },
+  // Membership database. Create in dashboard: Storage & Databases -> D1 ->
+  // Create database -> name "gamedverygood-db", then paste its Database ID here.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "gamedverygood-db",
+      "database_id": "REPLACE_WITH_DATABASE_ID"
+    }
+  ],
   "observability": {
     "enabled": true
   }
