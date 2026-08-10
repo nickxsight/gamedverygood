@@ -1,25 +1,110 @@
-# CODING AGENTS: READ THIS FIRST
+# gamedverygood
 
-This is a **handoff bundle** from Claude Design (claude.ai/design).
+A Thai/English gaming **top-up portal** (เติมเกม), news hub, and game tools —
+built from the Claude Design prototype `project/Gamedverygood Modern.dc.html`.
 
-A user mocked up designs in HTML/CSS/JS using an AI design tool, then exported this bundle so a coding agent can implement the designs for real.
+Glassmorphism visual language, Day/Night themes, animated aurora background, a
+StreamVerse-style game browser, a live "ราคาเติมวันนี้" price board, coupons /
+flash-sale / favorites, a QR checkout flow, membership + rewards, and an AI chat
+assistant ("Vera") backed by the Claude API with a keyword fallback.
 
-## What you should do — IMPORTANT
+Stack: **React 18 + TypeScript + Vite**, a lightweight **Zustand** store, and a
+small **Express** proxy for the Claude API.
 
-**Read the chat transcripts first.** There are 2 chat transcript(s) in `chats/`. The transcripts show the full back-and-forth between the user and the design assistant — they tell you **what the user actually wants** and **where they landed** after iterating. Don't skip them. The final HTML files are the output, but the chat is where the intent lives.
+## Quick start
 
-**Read `project/Gamedverygood Modern.dc.html` in full.** The user had this file open when they triggered the handoff, so it's almost certainly the primary design they want built. Read it top to bottom — don't skim. Then **follow its imports**: open every file it pulls in (shared components, CSS, scripts) so you understand how the pieces fit together before you start implementing.
+```bash
+npm install
+npm run dev      # web (Vite, :5173) + chat proxy (Express, :8787) together
+```
 
-**If anything is ambiguous, ask the user to confirm before you start implementing.** It's much cheaper to clarify scope up front than to build the wrong thing.
+Open http://localhost:5173.
 
-## About the design files
+To enable the real Claude-powered chat, copy `.env.example` to `.env` and set
+your key:
 
-The design medium is **HTML/CSS/JS** — these are prototypes, not production code. Your job is to **recreate them pixel-perfectly** in whatever technology makes sense for the target codebase (React, Vue, native, whatever fits). Match the visual output; don't copy the prototype's internal structure unless it happens to fit.
+```bash
+cp .env.example .env
+# then edit .env:
+ANTHROPIC_API_KEY=sk-ant-...
+```
 
-**Don't render these files in a browser or take screenshots unless the user asks you to.** Everything you need — dimensions, colors, layout rules — is spelled out in the source. Read the HTML and CSS directly; a screenshot won't tell you anything they don't.
+Without a key the site works fully — "Vera" transparently falls back to a
+built-in keyword/intent bot (answers top-up / order / promo questions and shows
+game & order cards).
 
-## Bundle contents
+## Scripts
 
-- `README.md` — this file
-- `chats/` — conversation transcripts (read these!)
-- `project/` — the `Gamedverygood Website Design` project files (HTML prototypes, assets, components)
+| command           | what it does                                        |
+| ----------------- | --------------------------------------------------- |
+| `npm run dev`     | Vite dev server + chat proxy (concurrently)         |
+| `npm run server`  | chat proxy only (`server/index.js`, port 8787)      |
+| `npm run build`   | typecheck + production build to `dist/`             |
+| `npm run preview` | serve the production build                          |
+| `npm run typecheck` | TypeScript only                                   |
+| `npm run cf:dev`  | build + run the Cloudflare Worker locally           |
+| `npm run deploy`  | build + deploy to Cloudflare                        |
+
+## Deploy to Cloudflare
+
+The whole app deploys as **one Cloudflare Worker**: the Vite build (`dist/`) is
+served as static assets, and `worker/index.js` handles `/api/chat` +
+`/api/health` (replacing `server/index.js`, which is only used for local
+`npm run dev`). Config lives in `wrangler.jsonc`.
+
+```bash
+npx wrangler login                          # once — opens browser OAuth
+npx wrangler secret put ANTHROPIC_API_KEY   # once — enables the real AI chat
+npm run deploy
+```
+
+The deploy prints your live URL (`https://gamedverygood.<your-subdomain>.workers.dev`).
+Skipping the secret still works — Vera falls back to the keyword bot, same as
+local. To change the chat model, edit `ANTHROPIC_MODEL` in `wrangler.jsonc`.
+Custom domains can be attached in the Cloudflare dashboard under
+Workers → gamedverygood → Settings → Domains & Routes.
+
+To preview the production Worker locally before deploying: `npm run cf:dev`
+(serves the built site + API on the Workers runtime, no login needed).
+
+## Project layout
+
+```
+src/
+  data.ts              static content (games, packages, news, …)
+  store.ts             Zustand store — state, actions, chat bot + AI proxy call
+  vals.tsx             computeVals() — all derived view-models (ported renderVals)
+  css.ts               inline CSS-string → React style-object helper
+  App.tsx              shell: aurora bg, promo marquee, nav, routes, chat, timers
+  components/          Nav, PromoBar, LoginModal, Chat, Toast, BottomNav, Footer,
+                       ToolModal, PosterCard, ImageSlot, Logo
+  routes/              Home, Catalog, Topup, History, Tools, News, Article, Detail
+server/index.js        Claude API proxy for local dev (POST /api/chat, Express)
+worker/index.js        Cloudflare Worker: static site + /api/chat in production
+wrangler.jsonc         Cloudflare deploy config
+```
+
+### Images
+
+Game art / banners render as branded gradient placeholders by default (real box
+art is copyrighted). Each `<ImageSlot>` accepts a dropped image — drag a file
+onto any card/banner, or double-click to browse — and persists it in
+`localStorage`. Drop your own licensed art to replace the gradients.
+
+## Design source
+
+The original design bundle from Claude Design is kept for reference:
+
+- `project/` — the exported HTML/CSS/JS prototypes and assets
+- `chats/` — the design conversation transcripts that drove the iterations
+
+`Gamedverygood Modern.dc.html` (the final, most-iterated design) is the one
+implemented here.
+
+## Notes
+
+- **Language:** Thai-first with English mixed in, matching the design.
+- **Theme:** defaults to Night; toggle in the header, persisted in `localStorage`.
+- The prototype's Claude-Design–specific runtime (`support.js`, `image-slot.js`,
+  the `<x-dc>` template engine) is **not** used — the UI was reimplemented as
+  idiomatic React while matching the prototype's visual output.
