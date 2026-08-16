@@ -33,6 +33,7 @@ export type State = {
   // admin-managed content
   isAdmin: boolean; pkgMap: Record<string, Pkg[]>; articles: ServerArticle[] | null
   siteTicker: string[] | null; customCoupons: boolean
+  serverImages: Record<string, number>
 }
 
 type Actions = {
@@ -62,6 +63,9 @@ type Actions = {
   logout: () => Promise<void>
   loadContent: () => Promise<void>
   applyPackages: (packages: Record<string, any[]>) => void
+  setServerImage: (slotId: string, ts: number | null) => void
+  uploadSlotImage: (slotId: string, file: File | null | undefined) => Promise<boolean>
+  removeSlotImage: (slotId: string) => Promise<void>
   showToast: (msg: string, icon?: string) => void
   // chat
   toggleChat: () => void
@@ -254,7 +258,7 @@ export const useStore = create<Store>((set, get) => {
     saleEnd: Date.now() + 3 * 3600 * 1000 + 47 * 60 * 1000,
     chatLog: [{ id: 1, role: 'bot', kind: 'text', text: 'สวัสดีค่ะ! ฉันชื่อ Vera ผู้ช่วยเติมเกมของ gamedverygood ถามได้เลยว่าอยากเติมเกมอะไร เช็คสถานะออเดอร์ หรือสอบถามโปรโมชั่นค่ะ', time: '09:24' }],
     user: null, points: null, authBusy: false, authError: '',
-    isAdmin: false, pkgMap: {}, articles: null, siteTicker: null, customCoupons: false,
+    isAdmin: false, pkgMap: {}, articles: null, siteTicker: null, customCoupons: false, serverImages: {},
 
     // ── actions ──
     set: patch,
@@ -356,8 +360,49 @@ export const useStore = create<Store>((set, get) => {
       }
       set({ pkgMap })
     },
+    setServerImage: (slotId, ts) => set((s) => {
+      const m = { ...s.serverImages }
+      if (ts) m[slotId] = ts; else delete m[slotId]
+      return { serverImages: m }
+    }),
+    uploadSlotImage: async (slotId, file) => {
+      if (!file || !['image/png', 'image/jpeg', 'image/webp', 'image/avif'].includes(file.type)) {
+        showToast('รองรับเฉพาะไฟล์รูป PNG / JPG / WebP', '⚠️')
+        return false
+      }
+      try {
+        // Downscale + re-encode to WebP so uploads stay small.
+        const bitmap = await createImageBitmap(file)
+        const cap = 1200
+        const scale = Math.min(1, cap / Math.max(bitmap.width, bitmap.height))
+        const w = Math.max(1, Math.round(bitmap.width * scale))
+        const h = Math.max(1, Math.round(bitmap.height * scale))
+        const canvas = document.createElement('canvas')
+        canvas.width = w; canvas.height = h
+        canvas.getContext('2d')!.drawImage(bitmap, 0, 0, w, h)
+        bitmap.close?.()
+        const dataUrl = canvas.toDataURL('image/webp', 0.85)
+        const resp = await fetch('/api/admin/images/' + slotId, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dataUrl }),
+        })
+        const data = await resp.json().catch(() => ({}))
+        if (resp.ok) {
+          get().setServerImage(slotId, data.updatedAt)
+          showToast('อัปเดตรูปแล้ว — ลูกค้าเห็นทันที', '🖼️')
+          return true
+        }
+        showToast(data.message || 'อัปโหลดรูปไม่สำเร็จ', '⚠️')
+      } catch {
+        showToast('อ่านไฟล์รูปไม่สำเร็จ', '⚠️')
+      }
+      return false
+    },
+    removeSlotImage: async (slotId) => {
+      const resp = await fetch('/api/admin/images/' + slotId, { method: 'DELETE' })
+      if (resp.ok) { get().setServerImage(slotId, null); showToast('ลบรูปแล้ว กลับไปใช้พื้นไล่สี', '🗑️') }
+    },
     loadContent: async () => {
-      const [pk, ar, si] = await Promise.all([api('/api/packages'), api('/api/articles'), api('/api/site')])
+      const [pk, ar, si, im] = await Promise.all([api('/api/packages'), api('/api/articles'), api('/api/site'), api('/api/images')])
       if (pk.ok && pk.data) get().applyPackages(pk.data.packages || {})
       if (ar.ok && ar.data && Array.isArray(ar.data.articles)) {
         set({
@@ -368,6 +413,7 @@ export const useStore = create<Store>((set, get) => {
         })
       }
       if (si.ok && si.data) set({ siteTicker: si.data.ticker || null, customCoupons: !!si.data.customCoupons })
+      if (im.ok && im.data && im.data.slots) set({ serverImages: im.data.slots })
     },
     login: async (email, password) => {
       set({ authBusy: true, authError: '' })

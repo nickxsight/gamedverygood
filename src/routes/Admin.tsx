@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Vals } from '../vals'
 import { useStore } from '../store'
-import { GAMES, PKGS } from '../data'
+import { GAMES, PKGS, NEWS } from '../data'
 import { css } from '../css'
 
 // Admin backoffice: overview, order queue, members, per-game pricing,
@@ -34,6 +34,39 @@ const ORDER_STATUS: Record<string, { label: string; color: string }> = {
 }
 type PkgRow = { amount: string; price: string; bonus: string; tag: string }
 const NEWS_CATS = ['อัปเดต', 'อีสปอร์ต', 'รีวิว', 'โปรโมชั่น', 'ไกด์']
+
+// Upload box for one artwork slot — shows the live image (or the branded
+// gradient fallback), click to pick a file, hover to remove.
+function SlotBox({ slotId, w, h, grad, short, caption }: { slotId: string; w: number; h: number; grad: string; short: string; caption: string }) {
+  const ts = useStore((s) => s.serverImages[slotId])
+  const uploadSlotImage = useStore((s) => s.uploadSlotImage)
+  const removeSlotImage = useStore((s) => s.removeSlotImage)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [busy, setBusy] = useState(false)
+  return (
+    <div style={{ width: w, flexShrink: 0 }}>
+      <div
+        onClick={() => inputRef.current?.click()}
+        onDragEnter={(e) => e.preventDefault()}
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={async (e) => { e.preventDefault(); setBusy(true); await uploadSlotImage(slotId, e.dataTransfer?.files?.[0]); setBusy(false) }}
+        title="คลิกหรือลากรูปมาวางเพื่ออัปโหลด"
+        style={{ position: 'relative', width: w, height: h, borderRadius: 12, overflow: 'hidden', cursor: 'pointer', border: '1.5px dashed ' + (ts ? 'transparent' : 'rgba(124,131,255,.45)'), background: grad, display: 'grid', placeItems: 'center', opacity: busy ? .5 : 1 }}
+      >
+        {ts
+          ? <img src={`/api/images/${slotId}?v=${ts}`} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+          : <span style={{ fontFamily: "'Space Grotesk'", fontWeight: 700, fontSize: 15, color: 'rgba(255,255,255,.9)' }}>{short}</span>}
+        {!ts && <span style={{ position: 'absolute', bottom: 6, left: 0, right: 0, textAlign: 'center', fontSize: 10, color: 'rgba(255,255,255,.85)' }}>+ อัปโหลด</span>}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 5 }}>
+        <span style={{ fontSize: 11, color: 'var(--t3,#878e9a)' }}>{caption}</span>
+        {ts && <span onClick={() => { if (window.confirm('ลบรูปนี้?')) removeSlotImage(slotId) }} style={{ cursor: 'pointer', fontSize: 11, color: '#f87171' }}>ลบ</span>}
+      </div>
+      <input ref={inputRef} type="file" accept="image/png,image/jpeg,image/webp,image/avif" hidden
+        onChange={async (e) => { setBusy(true); await uploadSlotImage(slotId, e.target.files?.[0]); setBusy(false); e.target.value = '' }} />
+    </div>
+  )
+}
 const DEFAULT_TICKER = [
   '🎁 สมาชิกใหม่รับโบนัส 10% ทุกการเติม · ใช้โค้ด WELCOME10',
   '💎 จ่ายด้วย Crypto (USDT) รับส่วนลดเพิ่มอีก 5%',
@@ -50,7 +83,7 @@ export default function Admin({ v }: { v: Vals }) {
   const pkgMap = useStore((s) => s.pkgMap)
   const siteTicker = useStore((s) => s.siteTicker)
 
-  const [tab, setTab] = useState<'overview' | 'orders' | 'users' | 'pkgs' | 'coupons' | 'news' | 'site'>('overview')
+  const [tab, setTab] = useState<'overview' | 'orders' | 'users' | 'pkgs' | 'coupons' | 'news' | 'images' | 'site'>('overview')
   const [overview, setOverview] = useState<any>(null)
 
   // orders
@@ -213,6 +246,7 @@ export default function Admin({ v }: { v: Vals }) {
         {tabBtn('pkgs', '💰 แพ็กเกจ & ราคา')}
         {tabBtn('coupons', '🎟️ คูปอง')}
         {tabBtn('news', '📰 ข่าว & บทความ')}
+        {tabBtn('images', '🖼️ รูปภาพ')}
         {tabBtn('site', '📣 แถบประกาศ')}
       </div>
 
@@ -441,6 +475,47 @@ export default function Admin({ v }: { v: Vals }) {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* ===== IMAGES ===== */}
+      {tab === 'images' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+          <div style={{ ...card, padding: '16px 22px', fontSize: 13, color: 'var(--t3,#878e9a)', lineHeight: 1.7 }}>
+            รูปที่อัปโหลดตรงนี้แสดงให้<b style={{ color: 'var(--t1,#eef0f5)' }}>ลูกค้าทุกคนเห็นทันที</b> (คลิกช่องหรือลากรูปมาวาง · ระบบย่อ/บีบอัดให้อัตโนมัติ) —
+            <b style={{ color: 'var(--t1,#eef0f5)' }}> ปกเกม</b>ใช้บนการ์ดแนวตั้ง (แนะนำรูปตั้ง 2:3) ส่วน<b style={{ color: 'var(--t1,#eef0f5)' }}>แบนเนอร์</b>ใช้บนสไลด์ใหญ่หน้าแรก (แนะนำรูปนอน 16:9) ·
+            อีกทางลัด: เปิดหน้าเว็บปกติแล้ว<b style={{ color: 'var(--t1,#eef0f5)' }}>ลากรูปวางบนการ์ดจริงได้เลย</b>ตอนล็อกอินเป็นแอดมิน · ใช้เฉพาะรูปที่มีสิทธิ์ใช้งานนะครับ
+          </div>
+          <div style={card}>
+            <div style={{ fontFamily: "'Space Grotesk','IBM Plex Sans Thai'", fontWeight: 600, fontSize: 16, marginBottom: 16 }}>รูปเกม</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {GAMES.map((g0) => (
+                <div key={g0.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 16, padding: '12px 14px', background: 'var(--s-inset,#161922)', borderRadius: 13, flexWrap: 'wrap' }}>
+                  <div style={{ flex: 1, minWidth: 140, paddingTop: 6 }}>
+                    <div style={{ fontWeight: 600, fontSize: 14 }}>{g0.name}</div>
+                    <div style={{ fontSize: 11.5, color: 'var(--t3,#878e9a)' }}>{g0.genre}</div>
+                  </div>
+                  <SlotBox slotId={'img-' + g0.id} w={76} h={114} grad={`linear-gradient(140deg,${g0.c1},${g0.c2})`} short={g0.short} caption="ปกเกม (2:3)" />
+                  <SlotBox slotId={'banner-' + g0.id} w={202} h={114} grad={`linear-gradient(140deg,${g0.c1},${g0.c2})`} short={g0.short} caption="แบนเนอร์หน้าแรก (16:9)" />
+                </div>
+              ))}
+            </div>
+          </div>
+          <div style={card}>
+            <div style={{ fontFamily: "'Space Grotesk','IBM Plex Sans Thai'", fontWeight: 600, fontSize: 16, marginBottom: 4 }}>รูปข่าว & บทความ</div>
+            <div style={{ fontSize: 12, color: 'var(--t3b,#6c727e)', marginBottom: 16 }}>{articles.length ? 'บทความของคุณ' : 'ตอนนี้หน้าข่าวแสดงบทความตัวอย่าง — รูปด้านล่างคือของบทความตัวอย่าง'}</div>
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+              {(articles.length
+                ? articles.map((a) => ({ slotId: 'img-a' + a.id, title: a.title }))
+                : NEWS.map((n) => ({ slotId: 'img-' + n.id, title: n.title }))
+              ).map((it) => (
+                <div key={it.slotId} style={{ width: 202 }}>
+                  <SlotBox slotId={it.slotId} w={202} h={114} grad="linear-gradient(140deg,#6d6af5,#8b91ff)" short="NEWS" caption="รูปประกอบ (16:9)" />
+                  <div style={{ fontSize: 11.5, color: 'var(--t2,#9aa1ad)', marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.title}</div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 

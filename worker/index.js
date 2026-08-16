@@ -42,6 +42,15 @@ async function migrate(db) {
       used_count INTEGER NOT NULL DEFAULT 0
     )`),
     db.prepare('CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)'),
+    // Admin-uploaded artwork, keyed by the UI's image-slot ids (img-<game>,
+    // banner-<game>, img-a<article>). Stored as base64 in D1 so no extra
+    // Cloudflare setup (R2 bucket) is needed; images are downscaled WebP.
+    db.prepare(`CREATE TABLE IF NOT EXISTS images (
+      slot_id TEXT PRIMARY KEY,
+      mime TEXT NOT NULL,
+      data TEXT NOT NULL,
+      updated_at INTEGER NOT NULL
+    )`),
   ])
   // Admin-managed content: per-game packages and news articles.
   await db.batch([
@@ -287,6 +296,20 @@ async function handleContent(env, path) {
     const nCoupons = await db.prepare('SELECT COUNT(*) AS n FROM coupons').first()
     return json({ ticker: Array.isArray(ticker) && ticker.length ? ticker : null, customCoupons: nCoupons.n > 0 })
   }
+  if (path === '/api/images') {
+    const rows = await db.prepare('SELECT slot_id, updated_at FROM images').all()
+    const slots = {}
+    for (const r of rows.results || []) slots[r.slot_id] = r.updated_at
+    return json({ slots })
+  }
+  const imgMatch = path.match(/^\/api\/images\/([a-z0-9_-]{1,60})$/)
+  if (imgMatch) {
+    const row = await db.prepare('SELECT mime, data FROM images WHERE slot_id = ?').bind(imgMatch[1]).first()
+    if (!row) return json({ message: 'not found' }, 404)
+    const bin = Uint8Array.from(atob(row.data), (c) => c.charCodeAt(0))
+    // Callers append ?v=<updated_at>, so the binary itself can cache forever.
+    return new Response(bin, { headers: { 'Content-Type': row.mime, 'Cache-Control': 'public, max-age=31536000, immutable' } })
+  }
   if (path === '/api/packages') {
     const rows = await db.prepare('SELECT id, gid, amount, price, bonus, tag FROM packages ORDER BY gid, sort, id').all()
     const packages = {}
@@ -419,6 +442,28 @@ async function handleAdmin(request, env, path, url) {
   if (cpnMatch && request.method === 'DELETE') {
     await db.prepare('DELETE FROM coupons WHERE code = ?').bind(cpnMatch[1]).run()
     return json({ ok: true })
+  }
+
+  // ---- artwork uploads ----
+  const imgAdmMatch = path.match(/^\/api\/admin\/images\/([a-z0-9_-]{1,60})$/)
+  if (imgAdmMatch) {
+    const slotId = imgAdmMatch[1]
+    if (request.method === 'PUT') {
+      const b = await readBody(request)
+      const dataUrl = String((b && b.dataUrl) || '')
+      if (dataUrl.length > 950000) return json({ message: 'ไฟล์ใหญ่เกินไป (จำกัด ~700KB หลังบีบอัด)' }, 400)
+      const m = dataUrl.match(/^data:(image\/(?:webp|png|jpeg|avif));base64,([A-Za-z0-9+/=]+)$/)
+      if (!m) return json({ message: 'รูปแบบไฟล์ไม่ถูกต้อง (รองรับ WebP/PNG/JPEG)' }, 400)
+      const now = Date.now()
+      await db.prepare(
+        'INSERT INTO images (slot_id, mime, data, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(slot_id) DO UPDATE SET mime = ?, data = ?, updated_at = ?',
+      ).bind(slotId, m[1], m[2], now, m[1], m[2], now).run()
+      return json({ ok: true, slotId, updatedAt: now })
+    }
+    if (request.method === 'DELETE') {
+      await db.prepare('DELETE FROM images WHERE slot_id = ?').bind(slotId).run()
+      return json({ ok: true, slotId })
+    }
   }
 
   // ---- site settings (marquee ticker) ----
@@ -666,7 +711,7 @@ export default {
       }
     }
 
-    if (path === '/api/packages' || path === '/api/articles' || path === '/api/site') {
+    if (path === '/api/packages' || path === '/api/articles' || path === '/api/site' || path === '/api/images' || path.startsWith('/api/images/')) {
       try {
         return await handleContent(env, path)
       } catch (err) {
