@@ -176,6 +176,7 @@ export default function Topup({ v }: { v: Vals }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 11.5, color: 'var(--ok,#4ade80)' }}>🛡️ การันตีคืนเงิน 100% หากเติมไม่สำเร็จ</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 11.5, color: 'var(--t3b,#6c727e)' }}>🔒 ชำระเงินปลอดภัยผ่านระบบเข้ารหัส SSL</div>
+            <div style={{ fontSize: 11, color: 'var(--t3b,#6c727e)', lineHeight: 1.6 }}>การกดยืนยันถือว่ายอมรับ <span onClick={() => v.openLegal('terms')} style={{ color: 'var(--acc,#4f46e5)', cursor: 'pointer' }}>เงื่อนไขการใช้งาน</span> และ <span onClick={() => v.openLegal('refund')} style={{ color: 'var(--acc,#4f46e5)', cursor: 'pointer' }}>นโยบายการคืนเงิน</span></div>
           </div>
         </div>
       </div>

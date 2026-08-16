@@ -15,8 +15,7 @@ export default function Detail({ v }: { v: Vals }) {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
               <span style={{ padding: '4px 11px', background: 'rgba(255,255,255,.18)', borderRadius: 8, fontSize: 12, color: '#fff' }}>{g.genre}</span>
-              <span style={{ fontSize: 13, color: '#fff', fontWeight: 500 }}>★ 4.9</span>
-            </div>
+              </div>
             <h1 data-h1 style={{ fontFamily: "'Space Grotesk','IBM Plex Sans Thai'", fontWeight: 700, fontSize: 44, margin: '0 0 8px', letterSpacing: '-1.5px', color: '#fff' }}>{g.name}</h1>
             <p style={{ fontSize: 14.5, color: 'rgba(255,255,255,.82)', margin: 0, maxWidth: 540, lineHeight: 1.6 }}>{g.desc}</p>
           </div>
@@ -54,7 +53,7 @@ export default function Detail({ v }: { v: Vals }) {
 
         <div style={{ position: 'sticky', top: 88, backdropFilter: 'blur(15px) saturate(1.4)', WebkitBackdropFilter: 'blur(15px) saturate(1.4)', background: 'var(--s-card,#13151d)', border: '1px solid var(--bd,rgba(255,255,255,.09))', borderRadius: 20, padding: 24, boxShadow: '0 16px 44px -24px rgba(0,0,0,.18)' }}>
           <div style={{ fontSize: 12.5, color: 'var(--t3b,#6c727e)', marginBottom: 6 }}>เริ่มต้นเพียง</div>
-          <div style={{ fontFamily: "'Space Grotesk','IBM Plex Sans Thai'", fontWeight: 700, fontSize: 34, marginBottom: 4 }}>฿{g.from}</div>
+          <div style={{ fontFamily: "'Space Grotesk','IBM Plex Sans Thai'", fontWeight: 700, fontSize: 34, marginBottom: 4 }}>฿{v.gFrom}</div>
           <div style={{ fontSize: 13, color: 'var(--t3,#878e9a)', marginBottom: 20 }}>เติมอัตโนมัติ · ปลอดภัย 100%</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 11, fontSize: 13.5, marginBottom: 22 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}><span style={{ color: 'var(--good,#16a34a)', fontWeight: 700 }}>✓</span> เติมเข้าทันทีภายใน 5 วินาที</div>

@@ -66,12 +66,11 @@ function SlotBox({ slotId, w, h, grad, short, caption }: { slotId: string; w: nu
   )
 }
 const DEFAULT_TICKER = [
-  '🎁 สมาชิกใหม่รับโบนัส 10% ทุกการเติม · ใช้โค้ด WELCOME10',
-  '💎 จ่ายด้วย Crypto (USDT) รับส่วนลดเพิ่มอีก 5%',
-  '🔥 RoV ลดสูงสุด 30% เฉพาะสัปดาห์นี้',
-  '⚡ เติมเข้าบัญชีเกมอัตโนมัติภายในไม่กี่วินาที',
-  '👑 สมาชิก VIP รับแต้มสะสมทุกการเติม แลกของรางวัลได้',
-  '📰 ข่าวใหม่: อัปเดตแพ็กเกจ Free Fire & Valorant แล้ววันนี้',
+  '🎁 สมัครสมาชิกใหม่รับ 100 แต้มทันที',
+  '🎟️ ใช้โค้ด WELCOME10 ลด 10% สำหรับสมาชิกใหม่',
+  '👑 สะสมแต้มทุกการเติม แลกเป็นเครดิตได้',
+  '🤝 ชวนเพื่อนมาเติม รับเครดิตคนละ ฿50',
+  '💬 มีคำถาม? ทักแชทหาทีมงานได้ตลอด',
 ]
 
 export default function Admin({ v }: { v: Vals }) {
@@ -303,6 +302,7 @@ export default function Admin({ v }: { v: Vals }) {
             <div style={{ flex: 1, minWidth: 180, display: 'flex', gap: 8 }}>
               <input value={ordQ} onChange={(e) => setOrdQ(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') loadOrders(ordStatus, ordQ) }} placeholder="ค้นหาเลขอ้างอิง / อีเมล / ชื่อ..." style={inputS} />
               <div onClick={() => loadOrders(ordStatus, ordQ)} style={btnGhost}>ค้นหา</div>
+              <a href="/api/admin/export/orders.csv" style={{ ...btnGhost, textDecoration: 'none' }}>⬇️ Export CSV</a>
             </div>
           </div>
           {ordList.length === 0 && <div style={{ color: 'var(--t3b,#6c727e)', fontSize: 13.5, padding: '14px 0' }}>ไม่พบออเดอร์</div>}

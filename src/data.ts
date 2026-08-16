@@ -64,7 +64,7 @@ export const PKGS: Pkg[] = [
 ]
 
 export const PAYS: Pay[] = [
-  { id: 'crypto', code: '₮', name: 'Crypto (USDT)', note: 'ส่วนลด 5%', c1: '#22c55e', c2: '#16a34a' },
+  { id: 'crypto', code: '₮', name: 'Crypto (USDT)', note: 'ไม่มีค่าธรรมเนียม', c1: '#22c55e', c2: '#16a34a' },
   { id: 'truemoney', code: 'TM', name: 'TrueMoney', note: 'วอลเล็ท · อั่งเปา', c1: '#fb7185', c2: '#f43f5e' },
   { id: 'promptpay', code: 'QR', name: 'PromptPay', note: 'สแกนจ่ายทันที', c1: '#38bdf8', c2: '#3b82f6' },
   { id: 'card', code: 'CC', name: 'บัตรเครดิต', note: 'Visa · Mastercard', c1: '#818cf8', c2: '#6366f1' },

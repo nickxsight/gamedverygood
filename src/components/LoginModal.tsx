@@ -21,13 +21,14 @@ export default function LoginModal({ v }: { v: Vals }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
+  const [refCode, setRefCode] = useState('')
 
   if (!v.showLogin) return null
 
   const submit = () => {
     if (authBusy) return
     if (mode === 'login') login(email, password)
-    else register(email, password, name)
+    else register(email, password, name, refCode)
   }
   const onKey = (e: React.KeyboardEvent) => { if (e.key === 'Enter') submit() }
   const switchMode = (m: 'login' | 'register') => { setMode(m); setStore({ authError: '' }) }
@@ -61,6 +62,8 @@ export default function LoginModal({ v }: { v: Vals }) {
           <>
             <label style={{ fontSize: 12, color: 'var(--t3,#878e9a)', display: 'block', marginBottom: 7 }}>ชื่อที่ใช้แสดง</label>
             <input value={name} onChange={(e) => setName(e.target.value)} onKeyDown={onKey} placeholder="เช่น ProGamer" style={inputStyle} />
+            <label style={{ fontSize: 12, color: 'var(--t3,#878e9a)', display: 'block', marginBottom: 7 }}>โค้ดชวนเพื่อน <span style={{ color: 'var(--t3b,#6c727e)' }}>(ถ้ามี — เติมครั้งแรกรับเครดิตคนละ ฿50)</span></label>
+            <input value={refCode} onChange={(e) => setRefCode(e.target.value.toUpperCase())} onKeyDown={onKey} placeholder="GVG-XXXXXX" style={inputStyle} />
           </>
         )}
         <label style={{ fontSize: 12, color: 'var(--t3,#878e9a)', display: 'block', marginBottom: 7 }}>อีเมล</label>

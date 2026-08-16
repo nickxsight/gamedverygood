@@ -104,10 +104,14 @@ export default function History({ v }: { v: Vals }) {
         <div style={{ backdropFilter: 'blur(15px) saturate(1.4)', WebkitBackdropFilter: 'blur(15px) saturate(1.4)', background: 'var(--s-card,#13151d)', border: '1px solid var(--bd,rgba(255,255,255,.09))', borderRadius: 18, padding: 22 }}>
           <div style={{ fontFamily: "'Space Grotesk','IBM Plex Sans Thai'", fontWeight: 600, fontSize: 16, marginBottom: 6 }}>ชวนเพื่อน รับเครดิต</div>
           <p style={{ fontSize: 12.5, color: 'var(--t3,#878e9a)', margin: '0 0 16px', lineHeight: 1.5 }}>เพื่อนเติมครั้งแรก คุณและเพื่อนรับเครดิตคนละ ฿50</p>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <div style={{ flex: 1, minWidth: 0, height: 46, display: 'flex', alignItems: 'center', padding: '0 14px', background: 'var(--s-inset,#161922)', border: '1.5px dashed rgba(124,131,255,.4)', borderRadius: 11, fontFamily: "'JetBrains Mono',monospace", fontSize: 13, color: 'var(--acc,#4f46e5)', fontWeight: 600, overflow: 'hidden' }}>{v.refCode}</div>
-            <div onClick={v.copyRef} style={{ cursor: 'pointer', height: 46, padding: '0 18px', display: 'grid', placeItems: 'center', background: 'var(--acc,#4f46e5)', borderRadius: 11, fontSize: 13, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap' }}>{v.copyLabel}</div>
-          </div>
+          {v.isMember && v.refCode ? (
+            <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ flex: 1, minWidth: 0, height: 46, display: 'flex', alignItems: 'center', padding: '0 14px', background: 'var(--s-inset,#161922)', border: '1.5px dashed rgba(124,131,255,.4)', borderRadius: 11, fontFamily: "'JetBrains Mono',monospace", fontSize: 13, color: 'var(--acc,#4f46e5)', fontWeight: 600, overflow: 'hidden' }}>{v.refCode}</div>
+              <div onClick={v.copyRef} style={{ cursor: 'pointer', height: 46, padding: '0 18px', display: 'grid', placeItems: 'center', background: 'var(--acc,#4f46e5)', borderRadius: 11, fontSize: 13, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap' }}>{v.copyLabel}</div>
+            </div>
+          ) : (
+            <div onClick={v.openLogin} style={{ cursor: 'pointer', height: 46, display: 'grid', placeItems: 'center', background: 'var(--s-inset,#161922)', border: '1.5px dashed rgba(124,131,255,.4)', borderRadius: 11, fontSize: 13, fontWeight: 600, color: 'var(--acc,#4f46e5)' }}>เข้าสู่ระบบเพื่อรับโค้ดของคุณ →</div>
+          )}
         </div>
         {/* order lookup */}
         <div style={{ backdropFilter: 'blur(15px) saturate(1.4)', WebkitBackdropFilter: 'blur(15px) saturate(1.4)', background: 'var(--s-card,#13151d)', border: '1px solid var(--bd,rgba(255,255,255,.09))', borderRadius: 18, padding: 22 }}>

@@ -26,12 +26,9 @@ export default function Home({ v }: { v: Vals }) {
             <div style={{ position: 'relative', zIndex: 2, padding: 46, maxWidth: 640 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 18 }}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '7px 15px', borderRadius: 99, background: 'rgba(255,255,255,.14)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,.24)', fontSize: 12.5, fontWeight: 700, color: '#fff', whiteSpace: 'nowrap' }}>🔥 {hs.badge}</span>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '7px 14px', borderRadius: 99, background: 'rgba(16,20,14,.4)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', border: '1px solid rgba(74,222,128,.4)', fontSize: 12.5, fontWeight: 600, color: '#eaffef', whiteSpace: 'nowrap' }}><span style={{ width: 7, height: 7, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 8px #4ade80', animation: 'gvgPulse 1.6s infinite' }} />กำลังเติม {v.liveCount} คนตอนนี้</span>
               </div>
               <h1 data-hero-h1 style={{ fontFamily: "'Space Grotesk','IBM Plex Sans Thai'", fontWeight: 700, fontSize: 56, lineHeight: 1.02, letterSpacing: '-2px', margin: '0 0 14px', color: '#fff', textShadow: '0 4px 30px rgba(0,0,0,.4)' }}>{hs.name}</h1>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', marginBottom: 16, fontSize: 14, color: 'rgba(255,255,255,.9)', fontWeight: 600 }}>
-                <span style={{ color: '#ffd479' }}>{hs.ratingPill}</span>
-                <span style={{ opacity: .4 }}>•</span>
                 <span>{hs.genre}</span>
                 <span style={{ opacity: .4 }}>•</span>
                 <span>{hs.currency}</span>
@@ -53,15 +50,14 @@ export default function Home({ v }: { v: Vals }) {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 15, flexWrap: 'wrap', gap: 8 }}>
               <h2 data-h1 style={{ fontFamily: "'Space Grotesk','IBM Plex Sans Thai'", fontWeight: 700, fontSize: 20, margin: 0, letterSpacing: '-.4px', display: 'flex', alignItems: 'center', gap: 10 }}><span style={{ width: 5, height: 20, borderRadius: 99, flexShrink: 0, background: 'linear-gradient(var(--acc,#4f46e5),var(--acc2,#7c83ff))', boxShadow: '0 0 14px -2px var(--acc,#4f46e5)' }} />📈 ราคาเติมวันนี้</h2>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14, fontSize: 12.5, color: 'var(--t3,#878e9a)' }}>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><span style={{ width: 7, height: 7, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 8px #4ade80', animation: 'gvgPulse 1.6s infinite' }} />{v.priceDrops} เกมราคาลง — เติมคุ้มวันนี้</span>
-                <span style={{ opacity: .5 }}>อัปเดต {v.priceUpdated}</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><span style={{ width: 7, height: 7, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 8px #4ade80', animation: 'gvgPulse 1.6s infinite' }} />{v.boardIsDeals ? `${v.priceDrops} เกมกำลังลดราคา` : 'ราคาจริง อัปเดตโดยทีมงาน'}</span>
               </div>
             </div>
-            <div style={{ fontSize: 12, color: 'var(--t3b,#6c727e)', margin: '-4px 0 12px' }}>แสดงเฉพาะ<span style={{ color: '#4ade80', fontWeight: 600 }}>เกมที่ราคาลง</span> เติมวันนี้คุ้มสุด 🔥</div>
+            <div style={{ fontSize: 12, color: 'var(--t3b,#6c727e)', margin: '-4px 0 12px' }}>{v.boardIsDeals ? <>เกมที่<span style={{ color: '#4ade80', fontWeight: 600 }}>ลดจากราคาปกติ</span> เติมช่วงนี้คุ้มสุด 🔥</> : 'ราคาเริ่มต้นของเกมยอดนิยม — มีลดราคาเมื่อไหร่ขึ้นที่นี่ทันที'}</div>
 
             <div style={{ borderRadius: 18, overflow: 'hidden', backdropFilter: 'blur(15px) saturate(1.4)', WebkitBackdropFilter: 'blur(15px) saturate(1.4)', background: 'var(--s-card,#13151d)', border: '1px solid var(--bd2,rgba(255,255,255,.18))', boxShadow: 'inset 0 1px 0 rgba(255,255,255,.14),0 18px 40px -22px rgba(0,0,0,.6)' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '46px 1fr auto auto', alignItems: 'center', gap: 14, padding: '13px 18px', borderBottom: '1px solid var(--bd,rgba(255,255,255,.09))', fontSize: 11, fontWeight: 700, letterSpacing: '.4px', color: 'var(--t3,#878e9a)', textTransform: 'uppercase' }}>
-                <div /><div>เกม</div><div style={{ textAlign: 'right' }}>ราคาเริ่มต้น</div><div style={{ textAlign: 'right', paddingLeft: 8 }}>เทียบวาน</div>
+                <div /><div>เกม</div><div style={{ textAlign: 'right' }}>ราคาเริ่มต้น</div><div style={{ textAlign: 'right', paddingLeft: 8 }}>ส่วนลด</div>
               </div>
               {v.priceEmpty && <div style={{ padding: 40, textAlign: 'center', color: 'var(--t3b,#6c727e)', fontSize: 14 }}>วันนี้ยังไม่มีเกมราคาลง</div>}
               {v.boardRows.map((pb: any) => (

@@ -30,6 +30,12 @@ async function migrate(db) {
   try { await db.prepare('ALTER TABLE orders ADD COLUMN amount TEXT').run() } catch { /* already exists */ }
   // Member suspension flag.
   try { await db.prepare('ALTER TABLE users ADD COLUMN banned INTEGER NOT NULL DEFAULT 0').run() } catch { /* already exists */ }
+  // Referral program: each member owns a share code; referred_by links the inviter.
+  try { await db.prepare('ALTER TABLE users ADD COLUMN ref_code TEXT').run() } catch { /* already exists */ }
+  try { await db.prepare('ALTER TABLE users ADD COLUMN referred_by INTEGER').run() } catch { /* already exists */ }
+  await db.prepare('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_ref ON users(ref_code)').run()
+  // Fixed-window rate limiting for auth endpoints.
+  await db.prepare('CREATE TABLE IF NOT EXISTS rate_limits (k TEXT PRIMARY KEY, n INTEGER NOT NULL, ws INTEGER NOT NULL)').run()
   // Admin-managed coupons and site settings (key/value JSON).
   await db.batch([
     db.prepare(`CREATE TABLE IF NOT EXISTS coupons (
@@ -178,6 +184,44 @@ async function currentUser(db, request) {
 // Bangkok-local calendar date, for the daily check-in.
 const bkkToday = () => new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10)
 
+// Fixed-window per-IP rate limit; returns false when the caller is over budget.
+async function rateLimit(db, request, bucket, max, windowMs) {
+  const ip = request.headers.get('CF-Connecting-IP') || 'local'
+  const k = bucket + ':' + ip
+  const now = Date.now()
+  const row = await db.prepare('SELECT n, ws FROM rate_limits WHERE k = ?').bind(k).first()
+  if (!row || now - row.ws > windowMs) {
+    await db.prepare('INSERT INTO rate_limits (k, n, ws) VALUES (?, 1, ?) ON CONFLICT(k) DO UPDATE SET n = 1, ws = ?')
+      .bind(k, now, now).run()
+    return true
+  }
+  if (row.n >= max) return false
+  await db.prepare('UPDATE rate_limits SET n = n + 1 WHERE k = ?').bind(k).run()
+  return true
+}
+const tooMany = () => json({ message: 'พยายามหลายครั้งเกินไป กรุณารอสักครู่แล้วลองใหม่' }, 429)
+
+// Referral codes: readable, unique, generated lazily per member.
+const REF_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
+function genRefCode() {
+  const bytes = crypto.getRandomValues(new Uint8Array(6))
+  let out = 'GVG-'
+  for (const b of bytes) out += REF_ALPHABET[b % REF_ALPHABET.length]
+  return out
+}
+async function ensureRefCode(db, user) {
+  if (user.ref_code) return user.ref_code
+  for (let i = 0; i < 4; i++) {
+    const code = genRefCode()
+    try {
+      await db.prepare('UPDATE users SET ref_code = ? WHERE id = ? AND ref_code IS NULL').bind(code, user.id).run()
+      const fresh = await db.prepare('SELECT ref_code FROM users WHERE id = ?').bind(user.id).first()
+      if (fresh && fresh.ref_code) return fresh.ref_code
+    } catch { /* collision — retry */ }
+  }
+  return ''
+}
+
 async function mePayload(db, user, env) {
   const favs = await db.prepare('SELECT game_id FROM favorites WHERE user_id = ?').bind(user.id).all()
   const orders = await db.prepare(
@@ -186,6 +230,7 @@ async function mePayload(db, user, env) {
   return {
     user: { email: user.email, name: user.name || '' },
     isAdmin: isAdminUser(env, user),
+    refCode: await ensureRefCode(db, user),
     points: user.points,
     redeemCredit: user.redeem_credit,
     checkedDays: user.checked_days,
@@ -474,6 +519,25 @@ async function handleAdmin(request, env, path, url) {
     return json({ ok: true })
   }
 
+  // ---- sales export (CSV, Excel-friendly with BOM) ----
+  if (path === '/api/admin/export/orders.csv' && request.method === 'GET') {
+    const rows = await db.prepare(
+      `SELECT o.id, o.created_at, u.email, u.name, o.gid, o.amount, o.pkg, o.price, o.status, o.ref
+       FROM orders o JOIN users u ON u.id = o.user_id ORDER BY o.id DESC LIMIT 5000`,
+    ).all()
+    const esc = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"'
+    const lines = ['id,วันที่,อีเมล,ชื่อ,เกม,จำนวน,แพ็กเกจ,ราคา(฿),สถานะ,เลขอ้างอิง']
+    for (const o of rows.results || []) {
+      lines.push([o.id, o.created_at, o.email, o.name, o.gid, o.amount, o.pkg, o.price, o.status, o.ref].map(esc).join(','))
+    }
+    return new Response('\ufeff' + lines.join('\r\n'), {
+      headers: {
+        'Content-Type': 'text/csv; charset=utf-8',
+        'Content-Disposition': 'attachment; filename="gamedverygood-orders.csv"',
+      },
+    })
+  }
+
   // ---- game catalog (custom games + hiding built-ins) ----
   const parseGame = async () => {
     const b = await readBody(request)
@@ -653,19 +717,27 @@ async function handleAccount(request, env, path) {
   await ensureSchema(db)
 
   if (path === '/api/auth/register' && request.method === 'POST') {
+    if (!await rateLimit(db, request, 'reg', 10, 600000)) return tooMany()
     const b = await readBody(request)
     const email = ((b && b.email) || '').trim().toLowerCase()
     const password = (b && b.password) || ''
     const name = ((b && b.name) || '').trim().slice(0, 60)
+    const refInput = String((b && b.refCode) || '').trim().toUpperCase()
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ message: 'รูปแบบอีเมลไม่ถูกต้อง' }, 400)
     if (password.length < 6) return json({ message: 'รหัสผ่านต้องยาวอย่างน้อย 6 ตัวอักษร' }, 400)
+    let referredBy = null
+    if (refInput) {
+      const inviter = await db.prepare('SELECT id FROM users WHERE ref_code = ?').bind(refInput).first()
+      if (!inviter) return json({ message: 'โค้ดชวนเพื่อนไม่ถูกต้อง' }, 400)
+      referredBy = inviter.id
+    }
     const exists = await db.prepare('SELECT id FROM users WHERE email = ?').bind(email).first()
     if (exists) return json({ message: 'อีเมลนี้สมัครไว้แล้ว — ลองเข้าสู่ระบบแทน' }, 409)
     const salt = randomToken().slice(0, 32)
     const passHash = await hashPassword(password, salt)
     const ins = await db.prepare(
-      'INSERT INTO users (email, name, pass_hash, salt) VALUES (?, ?, ?, ?) RETURNING *',
-    ).bind(email, name, passHash, salt).first()
+      'INSERT INTO users (email, name, pass_hash, salt, referred_by) VALUES (?, ?, ?, ?, ?) RETURNING *',
+    ).bind(email, name, passHash, salt, referredBy).first()
     const token = randomToken()
     await db.prepare('INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)')
       .bind(token, ins.id, Date.now() + SESSION_DAYS * 86400000).run()
@@ -673,6 +745,7 @@ async function handleAccount(request, env, path) {
   }
 
   if (path === '/api/auth/login' && request.method === 'POST') {
+    if (!await rateLimit(db, request, 'login', 20, 600000)) return tooMany()
     const b = await readBody(request)
     const email = ((b && b.email) || '').trim().toLowerCase()
     const password = (b && b.password) || ''
@@ -696,6 +769,7 @@ async function handleAccount(request, env, path) {
   // Coupon validation — server-authoritative. Admin coupons take over from
   // the built-in demo codes as soon as the first one exists.
   if (path === '/api/coupons/validate' && request.method === 'POST') {
+    if (!await rateLimit(db, request, 'cpn', 30, 600000)) return tooMany()
     const b = await readBody(request)
     const code = String((b && b.code) || '').trim().toUpperCase().slice(0, 20)
     const price = Math.max(0, Number((b && b.price) || 0))
@@ -768,6 +842,10 @@ async function handleAccount(request, env, path) {
     const creditUsed = Math.max(0, Math.min(user.redeem_credit, Number((b && b.creditUsed) || 0)))
     const couponCode = String((b && b.couponCode) || '').trim().toUpperCase().slice(0, 20)
     if (!gid || !pkg || !ref) return json({ message: 'ข้อมูลออเดอร์ไม่ครบ' }, 400)
+    // Referral payout: the member's FIRST successful order credits ฿50 to
+    // both sides. Checked before this order is inserted.
+    const prev = await db.prepare("SELECT COUNT(*) AS n FROM orders WHERE user_id = ? AND status = 'success'").bind(user.id).first()
+    const firstOrder = (prev.n === 0) && user.referred_by
     // Record the order, earn 1 point per ฿10, burn any credit that was applied.
     const earned = Math.floor(price / 10)
     const stmts = [
@@ -777,6 +855,10 @@ async function handleAccount(request, env, path) {
         .bind(earned, creditUsed, user.id),
     ]
     if (couponCode) stmts.push(db.prepare('UPDATE coupons SET used_count = used_count + 1 WHERE code = ?').bind(couponCode))
+    if (firstOrder) {
+      stmts.push(db.prepare('UPDATE users SET redeem_credit = redeem_credit + 50 WHERE id = ?').bind(user.id))
+      stmts.push(db.prepare('UPDATE users SET redeem_credit = redeem_credit + 50 WHERE id = ?').bind(user.referred_by))
+    }
     await db.batch(stmts)
     const fresh = await db.prepare('SELECT * FROM users WHERE id = ?').bind(user.id).first()
     return json(await mePayload(db, fresh, env))

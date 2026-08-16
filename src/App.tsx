@@ -20,6 +20,7 @@ import News from './routes/News'
 import Article from './routes/Article'
 import Detail from './routes/Detail'
 import Admin from './routes/Admin'
+import Legal from './routes/Legal'
 
 // Fixed brand vibe (the design prototype's default "Indigo").
 const VIBE = ['#6d6af5', '#8b91ff', '#22c55e']
@@ -59,14 +60,11 @@ export default function App() {
     el.style.setProperty('--good', VIBE[2])
   }, [st.theme])
 
-  // Timers (ticker, promo carousel, clock, live counter, price-board paging).
+  // Timers: hero carousel rotation and price-board paging.
   useEffect(() => {
-    const ti = setInterval(() => set((s) => ({ tickerIdx: (s.tickerIdx + 1) % 5 })), 2600)
     const pi = setInterval(() => set((s) => ({ promoIdx: s.promoIdx + 1 })), 5000)
-    const clock = setInterval(() => set({ now: Date.now() }), 1000)
-    const lc = setInterval(() => set((s) => ({ liveCount: Math.max(1180, s.liveCount + Math.round((Math.random() - 0.42) * 9)) })), 2200)
     const bp = setInterval(() => set((s) => ({ boardPage: s.boardPage + 1 })), 4200)
-    return () => { clearInterval(ti); clearInterval(pi); clearInterval(clock); clearInterval(lc); clearInterval(bp) }
+    return () => { clearInterval(pi); clearInterval(bp) }
   }, [set])
 
   const v = computeVals(st)
@@ -96,6 +94,7 @@ export default function App() {
         {v.isArticleRoute && <Article v={v} />}
         {v.isDetail && <Detail v={v} />}
         {v.isAdminRoute && <Admin v={v} />}
+        {v.isLegalRoute && <Legal v={v} />}
       </main>
 
       <Footer v={v} />

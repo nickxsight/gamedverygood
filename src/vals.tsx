@@ -102,53 +102,50 @@ export function computeVals(st: Store) {
   })
   const rankedPosters = ranked.map((x, i) => ({ ...posterOf[x.id], rank: i + 1 }))
 
-  // ===== price board (stock-ticker style) =====
-  const daySeed = Math.floor(Date.now() / 86400000)
-  const priceBoardAll = GAMES.map((x, i) => {
-    const r = Math.sin((daySeed + i * 7.13) * 12.9898) * 43758.5453
-    const frac = r - Math.floor(r)
-    const pct = +((frac * 24) - 12).toFixed(1)
-    const down = pct < 0
-    const flat = Math.abs(pct) < 0.6
-    const base = x.from
-    const prev = Math.max(1, Math.round(base / (1 + pct / 100)))
-    return {
-      key: 'pb-' + x.id, id: x.id, short: x.short, name: x.name, currency: x.currency, cat: x.cat, genre: x.genre,
-      pct, down, flat, grad: 'linear-gradient(135deg,' + x.c1 + ',' + x.c2 + ')', slotId: 'img-' + x.id,
-      coverStyle: cover(x.c1, x.c2),
-      priceLabel: '฿' + base, prevLabel: '฿' + prev,
-      pctLabel: (down ? '▼ ' : (flat ? '● ' : '▲ ')) + Math.abs(pct).toFixed(1) + '%',
-      color: flat ? '#9aa1ad' : (down ? '#4ade80' : '#fb7185'),
-      chipBg: flat ? 'rgba(154,161,173,.12)' : (down ? 'rgba(74,222,128,.13)' : 'rgba(251,113,133,.13)'),
-      chipBd: flat ? 'rgba(154,161,173,.3)' : (down ? 'rgba(74,222,128,.35)' : 'rgba(251,113,133,.35)'),
-      moveLabel: down ? 'ราคาลง น่าเติม' : (flat ? 'ราคานิ่ง' : 'ราคาขึ้น'),
-      go: () => st.reorder(x.id, 'p3'),
-    }
-  })
-  const priceBoard = priceBoardAll.filter((p) => p.down).sort((a, b) => a.pct - b.pct)
-  const priceCount = priceBoard.length
-  const priceEmpty = priceBoard.length === 0
+  // ===== price board — REAL discounts: games whose admin-set cheapest
+  // package is below the list price (g.from). When nothing is discounted,
+  // shows the most popular games with their real starting prices instead.
+  const effFrom = (x: Game) => {
+    const list = s.pkgMap[x.id]
+    return list && list.length ? Math.min(...list.map((p) => p.price)) : x.from
+  }
+  const discounted = GAMES.map((x) => {
+    const now = effFrom(x)
+    if (now >= x.from) return null
+    const pct = +(((now - x.from) / x.from) * 100).toFixed(1)
+    return { x, now, pct }
+  }).filter(Boolean) as { x: Game; now: number; pct: number }[]
+  discounted.sort((a, b) => a.pct - b.pct)
+  const priceEmpty = false
+  const boardIsDeals = discounted.length > 0
+  const boardSrc = boardIsDeals
+    ? discounted
+    : ranked.slice(0, 5).map((x) => ({ x, now: effFrom(x), pct: 0 }))
+  const priceCount = boardSrc.length
   const boardPer = 5
-  const boardPages = Math.max(1, Math.ceil(priceBoard.length / boardPer))
+  const boardPages = Math.max(1, Math.ceil(boardSrc.length / boardPer))
   const boardPage = ((s.boardPage % boardPages) + boardPages) % boardPages
-  const boardSlice = priceBoard.length
-    ? Array.from({ length: boardPer }, (_, i) => priceBoard[(boardPage * boardPer + i) % priceBoard.length])
-    : []
-  const boardRows = boardSlice.map((p, ri) => ({
-    key: p.key + '-' + boardPage + '-' + ri,
-    grad: p.grad, short: p.short, name: p.name, currency: p.currency, slotId: p.slotId,
-    priceLabel: p.priceLabel, prevLabel: p.prevLabel, pctLabel: p.pctLabel,
-    color: p.color, chipBg: p.chipBg, chipBd: p.chipBd,
+  const boardSlice = boardSrc.slice(boardPage * boardPer, boardPage * boardPer + boardPer)
+  const boardRows = boardSlice.map((d, ri) => ({
+    key: 'pb-' + d.x.id + '-' + boardPage + '-' + ri,
+    grad: 'linear-gradient(135deg,' + d.x.c1 + ',' + d.x.c2 + ')', short: d.x.short, name: d.x.name,
+    currency: d.x.currency, slotId: 'img-' + d.x.id,
+    priceLabel: '฿' + d.now,
+    prevLabel: boardIsDeals ? 'ปกติ ฿' + d.x.from : '',
+    pctLabel: boardIsDeals ? '▼ ' + Math.abs(d.pct).toFixed(0) + '%' : 'เริ่มต้น',
+    color: boardIsDeals ? '#4ade80' : '#9aa1ad',
+    chipBg: boardIsDeals ? 'rgba(74,222,128,.13)' : 'rgba(154,161,173,.12)',
+    chipBd: boardIsDeals ? 'rgba(74,222,128,.35)' : 'rgba(154,161,173,.3)',
     rowStyle: `display:grid;grid-template-columns:46px 1fr auto auto;align-items:center;gap:14px;padding:12px 18px;border-bottom:1px solid var(--bd-soft,rgba(255,255,255,.06));cursor:pointer;animation:gvgFadeUp .4s ${(ri * 0.06).toFixed(2)}s both;transition:background .15s;`,
-    go: p.go,
+    go: () => st.reorder(d.x.id, 'p3'),
   }))
   const boardDotsEls = Array.from({ length: boardPages }).map((_, i) => ({
     key: 'bd' + i, go: () => st.set({ boardPage: i }),
     style: i === boardPage ? 'width:22px;height:6px;border-radius:99px;background:var(--acc,#4f46e5);cursor:pointer;transition:all .3s;' : 'width:6px;height:6px;border-radius:99px;background:var(--bd2,rgba(255,255,255,.2));cursor:pointer;transition:all .3s;',
   }))
   const boardMultetPage = boardPages > 1
-  const priceUpdated = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
-  const priceDrops = priceBoardAll.filter((p) => p.down).length
+  const priceUpdated = ''
+  const priceDrops = discounted.length
   const newPosters = ranked.filter((x) => x.isNew).map((x) => posterOf[x.id])
   const mobaPosters = ranked.filter((x) => x.cat === 'moba').map((x) => posterOf[x.id])
   const rpgPosters = ranked.filter((x) => x.cat === 'rpg').map((x) => posterOf[x.id])
@@ -159,7 +156,7 @@ export function computeVals(st: Store) {
   const heroPool = ranked.slice(0, 5)
   const heroIdx = s.promoIdx % (heroPool.length || 1)
   const heroSrc = heroPool[heroIdx] || heroPool[0]
-  const heroBadge = heroSrc.isNew ? 'มาใหม่' : (heroIdx === 0 ? 'อันดับ 1 ตอนนี้' : 'ยอดนิยม')
+  const heroBadge = heroSrc.isNew ? 'มาใหม่' : 'แนะนำ'
   const heroSlide = {
     ...posterOf[heroSrc.id], key: 'hero-' + heroSrc.id, desc: heroSrc.desc,
     badge: heroBadge,
@@ -335,12 +332,11 @@ export function computeVals(st: Store) {
   const promoTicker = (s.siteTicker && s.siteTicker.length)
     ? s.siteTicker.map((t) => ({ text: t }))
     : [
-      { text: '🎁 สมาชิกใหม่รับโบนัส 10% ทุกการเติม · ใช้โค้ด WELCOME10' },
-      { text: '💎 จ่ายด้วย Crypto (USDT) รับส่วนลดเพิ่มอีก 5%' },
-      { text: '🔥 RoV ลดสูงสุด 30% เฉพาะสัปดาห์นี้' },
-      { text: '⚡ เติมเข้าบัญชีเกมอัตโนมัติภายในไม่กี่วินาที' },
-      { text: '👑 สมาชิก VIP รับแต้มสะสมทุกการเติม แลกของรางวัลได้' },
-      { text: '📰 ข่าวใหม่: อัปเดตแพ็กเกจ Free Fire & Valorant แล้ววันนี้' },
+      { text: '🎁 สมัครสมาชิกใหม่รับ 100 แต้มทันที' },
+      { text: '🎟️ ใช้โค้ด WELCOME10 ลด 10% สำหรับสมาชิกใหม่' },
+      { text: '👑 สะสมแต้มทุกการเติม แลกเป็นเครดิตได้' },
+      { text: '🤝 ชวนเพื่อนมาเติม รับเครดิตคนละ ฿50' },
+      { text: '💬 มีคำถาม? ทักแชทหาทีมงานได้ตลอด' },
     ]
   const tk = TICKER[s.tickerIdx % TICKER.length]
   const ticker = { key: 'tk' + s.tickerIdx, text: `${tk.who} เพิ่งเติม ${tk.g} ${tk.a} · ${tk.t}` }
@@ -484,7 +480,7 @@ export function computeVals(st: Store) {
     }
   })
 
-  const refCode = 'GVG-PROGAMER88'
+  const refCode = s.refCode || ''
 
   // ---- order lookup ----
   const lookupResult = (() => {
@@ -508,7 +504,7 @@ export function computeVals(st: Store) {
   const suggestSource = q ? games.filter((x) => matchGame(x, q)) : [...games].sort((a, b) => b.daily - a.daily)
   const suggestList = suggestSource.slice(0, 6).map((x) => ({
     key: 'sg-' + x.id, name: x.name, genre: x.genre, short: x.short, coverStyle: x.coverStyle,
-    fromLabel: '฿' + x.from, hot: x.hot,
+    fromLabel: '฿' + effFrom(x), hot: x.hot,
     pick: () => { st.openGame(x.id); st.set({ searchFocus: false, q: '' }) },
   }))
   const showSuggest = !!s.searchFocus && suggestList.length > 0
@@ -616,7 +612,7 @@ export function computeVals(st: Store) {
       timeStyle: `font-size:10px;color:var(--t3b,#5a6170);margin-top:4px;padding:0 4px;`,
     }
     if (m.kind === 'order') row.order = buildOrderCard(m.order)
-    if (m.kind === 'cards') row.cardList = (m.cards || []).map((gid: string) => { const gg = GAMES.find((x) => x.id === gid) || GAMES[0]; return { coverStyle: cover(gg.c1, gg.c2), short: gg.short, name: gg.name, fromLabel: '฿' + gg.from, go: () => { st.reorder(gid, 'p3'); st.set({ chatOpen: false }) } } })
+    if (m.kind === 'cards') row.cardList = (m.cards || []).map((gid: string) => { const gg = GAMES.find((x) => x.id === gid) || GAMES[0]; return { coverStyle: cover(gg.c1, gg.c2), short: gg.short, name: gg.name, fromLabel: '฿' + effFrom(gg), go: () => { st.reorder(gid, 'p3'); st.set({ chatOpen: false }) } } })
     return row
   })
   const chatQuick = [
@@ -647,7 +643,7 @@ export function computeVals(st: Store) {
     rankedPosters, newPosters, mobaPosters, rpgPosters, searchPosters, allPosters, genreChips,
     hasNew: newPosters.length > 0, hasMoba: mobaPosters.length > 0, hasRpg: rpgPosters.length > 0,
     browseMode: q.length === 0, searchCount: searchPosters.length,
-    g, total: cur.price, fee, grandTotal,
+    g, gFrom: effFrom(g as Game), total: cur.price, fee, grandTotal,
     subtotal, discount, creditUsed, hasDiscount: discount > 0, hasCredit: creditUsed > 0,
     coupon: s.coupon, noCoupon: !s.coupon, couponLabel: s.coupon ? s.coupon.label : '', couponCode: s.coupon ? s.coupon.code : '',
     couponInput: s.couponInput, couponError: s.couponError,
@@ -681,6 +677,9 @@ export function computeVals(st: Store) {
     walletSub: s.user ? 'เครดิตของฉัน' : 'ยอดเงิน',
     doLogout: () => st.logout(),
     isArticleRoute: s.route === 'article', article: articleData,
+    isLegalRoute: s.route === 'legal',
+    openLegal: (doc: string) => { st.set({ legalDoc: doc, route: 'legal' }); if (typeof window !== 'undefined') window.scrollTo(0, 0) },
+    boardIsDeals,
     toolModalData, closeTool: () => st.closeTool(),
     isSensTool: toolModalData && toolModalData.id === 't1',
     isGachaTool: toolModalData && toolModalData.id === 't8',

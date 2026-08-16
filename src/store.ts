@@ -35,6 +35,7 @@ export type State = {
   siteTicker: string[] | null; customCoupons: boolean
   serverImages: Record<string, number>
   customGames: Game[]; hiddenGames: string[]
+  legalDoc: string; refCode: string
 }
 
 type Actions = {
@@ -60,7 +61,7 @@ type Actions = {
   // membership
   loadMe: () => Promise<void>
   login: (email: string, password: string) => Promise<boolean>
-  register: (email: string, password: string, name: string) => Promise<boolean>
+  register: (email: string, password: string, name: string, refCode?: string) => Promise<boolean>
   logout: () => Promise<void>
   loadContent: () => Promise<void>
   applyPackages: (packages: Record<string, any[]>) => void
@@ -107,10 +108,10 @@ function composeReply(text: string, hadImg: boolean, orders: Order[], games: Gam
     return [{ kind: 'text', text: 'นี่คือออเดอร์ล่าสุดของคุณค่ะ 👇 แตะเพื่อสั่งซ้ำหรือดูประวัติทั้งหมดได้เลย' }, { kind: 'order', order: orders[0] }]
   }
   if (has('โค้ด', 'ส่วนลด', 'promo', 'โปร', 'coupon', 'discount', 'ลด')) {
-    return [{ kind: 'text', text: 'ตอนนี้มีโค้ด WELCOME10 รับส่วนลด 10% สำหรับการเติมครั้งแรกค่ะ ✨ และถ้าจ่ายด้วย Crypto (USDT) รับส่วนลดเพิ่มอีก 5% — ใส่โค้ดได้ที่หน้าเติมเกมเลยนะคะ' }]
+    return [{ kind: 'text', text: 'ลองใช้โค้ด WELCOME10 รับส่วนลด 10% สำหรับสมาชิกใหม่ได้ค่ะ ✨ ใส่โค้ดได้ที่ช่องส่วนลดในหน้าชำระเงินเลยนะคะ' }]
   }
   if (has('จ่าย', 'ชำระ', 'payment', 'pay', 'พร้อมเพย์', 'promptpay', 'truemoney', 'บัตร', 'crypto')) {
-    return [{ kind: 'text', text: 'รองรับ TrueMoney, PromptPay, บัตรเครดิต และ Crypto (USDT) ค่ะ 💳 จ่ายด้วย Crypto รับส่วนลดเพิ่ม 5% และเครดิตเข้าทันทีหลังชำระเงินค่ะ' }]
+    return [{ kind: 'text', text: 'รองรับ TrueMoney, PromptPay, บัตรเครดิต และ Crypto (USDT) ค่ะ 💳 จ่ายด้วย Crypto ไม่มีค่าธรรมเนียม และเครดิตเข้าหลังชำระเงินค่ะ' }]
   }
   const detected = detectGames(t, games)
   if (detected.length) {
@@ -146,8 +147,8 @@ function buildPrompt(latest: string, hadImg: boolean, chatLog: ChatMsg[], orders
 เกมที่เติมได้:
 ${gameList}
 
-โปรโมชั่น: โค้ด WELCOME10 ลด 10% สำหรับสมาชิกใหม่ทุกการเติม และจ่ายด้วย Crypto (USDT) ลดเพิ่มอีก 5%
-ช่องทางชำระเงิน: TrueMoney, PromptPay, บัตรเครดิต, Crypto (USDT) — เครดิตเข้าทันทีหลังชำระ
+โปรโมชั่น: โค้ด WELCOME10 ลด 10% สำหรับสมาชิกใหม่ และจ่ายด้วย Crypto (USDT) ไม่มีค่าธรรมเนียม
+ช่องทางชำระเงิน: TrueMoney, PromptPay, บัตรเครดิต, Crypto (USDT)
 ออเดอร์ล่าสุดของลูกค้า: ${o.ref} · เกม ${og ? og.name : ''} · สถานะ ${stTxt}
 
 กติกาการตอบ (สำคัญมาก)
@@ -196,7 +197,7 @@ export const useStore = create<Store>((set, get) => {
     set({
       user: d.user, loggedIn: true, points: d.points, redeemCredit: d.redeemCredit,
       checkedDays: d.checkedDays, claimedToday: d.claimedToday, favorites,
-      myOrders, redeemedPts: 0, authError: '', isAdmin: !!d.isAdmin,
+      myOrders, redeemedPts: 0, authError: '', isAdmin: !!d.isAdmin, refCode: d.refCode || '',
     })
   }
   const pushMsg: Actions['pushMsg'] = (msg) => set((s) => {
@@ -262,6 +263,7 @@ export const useStore = create<Store>((set, get) => {
     user: null, points: null, authBusy: false, authError: '',
     isAdmin: false, pkgMap: {}, articles: null, siteTicker: null, customCoupons: false, serverImages: {},
     customGames: [], hiddenGames: [],
+    legalDoc: 'terms', refCode: '',
 
     // ── actions ──
     set: patch,
@@ -432,9 +434,9 @@ export const useStore = create<Store>((set, get) => {
       set({ authError: (r.data && r.data.message) || 'เข้าสู่ระบบไม่สำเร็จ' })
       return false
     },
-    register: async (email, password, name) => {
+    register: async (email, password, name, refCode) => {
       set({ authBusy: true, authError: '' })
-      const r = await api('/api/auth/register', { email, password, name })
+      const r = await api('/api/auth/register', { email, password, name, refCode: (refCode || '').trim() || undefined })
       set({ authBusy: false })
       if (r.ok) {
         applyMe(r.data)
@@ -448,7 +450,7 @@ export const useStore = create<Store>((set, get) => {
     logout: async () => {
       await api('/api/auth/logout', {})
       set({
-        user: null, loggedIn: false, points: null, myOrders: null, isAdmin: false,
+        user: null, loggedIn: false, points: null, myOrders: null, isAdmin: false, refCode: '',
         favorites: { freefire: true, ro3: true }, checkedDays: 3, claimedToday: false,
         redeemCredit: 0, redeemedPts: 0, authError: '',
         route: get().route === 'admin' ? 'home' : get().route,

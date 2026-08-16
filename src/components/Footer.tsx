@@ -28,7 +28,12 @@ export default function Footer({ v }: { v: Vals }) {
           </div>
         ))}
       </div>
-      <div style={{ borderTop: '1px solid var(--bd,rgba(255,255,255,.09))', padding: '18px var(--wrap-pad,28px)', textAlign: 'center', fontSize: 12, color: '#565b66' }}>© 2026 gamedverygood.com · Game Hub · All rights reserved</div>
+      <div style={{ borderTop: '1px solid var(--bd,rgba(255,255,255,.09))', padding: '18px var(--wrap-pad,28px)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18, flexWrap: 'wrap', fontSize: 12, color: '#565b66' }}>
+        <span>© 2026 gamedverygood.com · Game Hub</span>
+        <span onClick={() => v.openLegal('terms')} style={{ cursor: 'pointer', color: 'var(--t3,#878e9a)' }}>เงื่อนไขการใช้งาน</span>
+        <span onClick={() => v.openLegal('privacy')} style={{ cursor: 'pointer', color: 'var(--t3,#878e9a)' }}>นโยบายความเป็นส่วนตัว</span>
+        <span onClick={() => v.openLegal('refund')} style={{ cursor: 'pointer', color: 'var(--t3,#878e9a)' }}>นโยบายการคืนเงิน</span>
+      </div>
     </footer>
   )
 }
