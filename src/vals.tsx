@@ -1,4 +1,4 @@
-import { GAMES, PKGS, PAYS, TOOLS, NEWS, REVIEWS, TICKER, DAILY, cover, PROMOS, FLASH_DEALS, type Game } from './data'
+import { PKGS, PAYS, TOOLS, NEWS, REVIEWS, TICKER, DAILY, cover, PROMOS, FLASH_DEALS, mergedGames, type Game } from './data'
 import type { Store } from './store'
 
 const matchGame = (x: Game, q: string): boolean => {
@@ -19,6 +19,9 @@ const scrollTop = () => { if (typeof window !== 'undefined') window.scrollTo(0, 
 export function computeVals(st: Store) {
   const s = st
   const setGo = (patch: Record<string, unknown>) => { st.set(patch as never); scrollTop() }
+  // Live catalog: built-ins minus admin-hidden, plus admin-created games.
+  // Shadows the static import so every lookup below uses the live list.
+  const GAMES = mergedGames(s.customGames, s.hiddenGames)
 
   const g: any = { ...(GAMES.find((x) => x.id === s.game) || GAMES[0]) }
   g.coverStyle = cover(g.c1, g.c2)

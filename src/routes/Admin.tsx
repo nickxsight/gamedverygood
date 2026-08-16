@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Vals } from '../vals'
 import { useStore } from '../store'
-import { GAMES, PKGS, NEWS } from '../data'
+import { GAMES, PKGS, NEWS, mergedGames } from '../data'
 import { css } from '../css'
 
 // Admin backoffice: overview, order queue, members, per-game pricing,
@@ -22,9 +22,7 @@ async function call(path: string, method = 'GET', body?: unknown) {
   return { ok: resp.ok, data }
 }
 
-const gameOf = (gid: string) => GAMES.find((x) => x.id === gid)
-const GameBadge = ({ gid }: { gid: string }) => {
-  const g = gameOf(gid)
+const GameBadge = ({ g }: { g: any }) => {
   return <div style={css('width:34px;height:34px;border-radius:9px;flex-shrink:0;display:grid;place-items:center;font-family:\'Space Grotesk\';font-weight:700;font-size:10px;color:#fff;background:linear-gradient(140deg,' + (g?.c1 || '#666') + ',' + (g?.c2 || '#444') + ');')}>{g?.short || '?'}</div>
 }
 const ORDER_STATUS: Record<string, { label: string; color: string }> = {
@@ -82,8 +80,12 @@ export default function Admin({ v }: { v: Vals }) {
   const applyPackages = useStore((s) => s.applyPackages)
   const pkgMap = useStore((s) => s.pkgMap)
   const siteTicker = useStore((s) => s.siteTicker)
+  const customGames = useStore((s) => s.customGames)
+  const hiddenGames = useStore((s) => s.hiddenGames)
+  const gamesAll = mergedGames(customGames, hiddenGames)
+  const findGame = (id: string) => gamesAll.find((x) => x.id === id) || GAMES.find((x) => x.id === id)
 
-  const [tab, setTab] = useState<'overview' | 'orders' | 'users' | 'pkgs' | 'coupons' | 'news' | 'images' | 'site'>('overview')
+  const [tab, setTab] = useState<'overview' | 'orders' | 'users' | 'games' | 'pkgs' | 'coupons' | 'news' | 'images' | 'site'>('overview')
   const [overview, setOverview] = useState<any>(null)
 
   // orders
@@ -103,6 +105,8 @@ export default function Admin({ v }: { v: Vals }) {
   // news
   const [articles, setArticles] = useState<any[]>([])
   const [editing, setEditing] = useState<any | null>(null)
+  // games
+  const [gForm, setGForm] = useState<any | null>(null)
   // site
   const [tickerText, setTickerText] = useState('')
 
@@ -142,7 +146,7 @@ export default function Admin({ v }: { v: Vals }) {
     )
   }
 
-  const game = GAMES.find((x) => x.id === gid)!
+  const game = gamesAll.find((x) => x.id === gid) || gamesAll[0]
 
   const savePkgs = async () => {
     setPkgBusy(true)
@@ -243,6 +247,7 @@ export default function Admin({ v }: { v: Vals }) {
         {tabBtn('overview', '📊 ภาพรวม')}
         {tabBtn('orders', '📦 ออเดอร์', overview?.pending || 0)}
         {tabBtn('users', '👥 สมาชิก')}
+        {tabBtn('games', '🎮 เกม')}
         {tabBtn('pkgs', '💰 แพ็กเกจ & ราคา')}
         {tabBtn('coupons', '🎟️ คูปอง')}
         {tabBtn('news', '📰 ข่าว & บทความ')}
@@ -272,9 +277,9 @@ export default function Admin({ v }: { v: Vals }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {(overview?.latest || []).map((o: any, i: number) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: 'var(--s-inset,#161922)', borderRadius: 11, fontSize: 13, flexWrap: 'wrap' }}>
-                  <GameBadge gid={o.gid} />
+                  <GameBadge g={findGame(o.gid)} />
                   <div style={{ flex: 1, minWidth: 120 }}>
-                    <div style={{ fontWeight: 600 }}>{gameOf(o.gid)?.name || o.gid} · {o.amount || o.pkg}</div>
+                    <div style={{ fontWeight: 600 }}>{findGame(o.gid)?.name || o.gid} · {o.amount || o.pkg}</div>
                     <div style={{ fontSize: 11.5, color: 'var(--t3,#878e9a)' }}>{o.buyer} · {o.ref}</div>
                   </div>
                   <span style={{ fontSize: 12, fontWeight: 600, color: ORDER_STATUS[o.status]?.color || 'var(--t3)' }}>{ORDER_STATUS[o.status]?.label || o.status}</span>
@@ -304,9 +309,9 @@ export default function Admin({ v }: { v: Vals }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {ordList.map((o) => (
               <div key={o.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: 'var(--s-inset,#161922)', borderRadius: 11, fontSize: 13, flexWrap: 'wrap' }}>
-                <GameBadge gid={o.gid} />
+                <GameBadge g={findGame(o.gid)} />
                 <div style={{ flex: 1, minWidth: 150 }}>
-                  <div style={{ fontWeight: 600 }}>{gameOf(o.gid)?.name || o.gid} · {o.amount || o.pkg} · ฿{o.price}</div>
+                  <div style={{ fontWeight: 600 }}>{findGame(o.gid)?.name || o.gid} · {o.amount || o.pkg} · ฿{o.price}</div>
                   <div style={{ fontSize: 11.5, color: 'var(--t3,#878e9a)' }}>{o.name || o.email} · {o.ref} · {o.created_at}</div>
                 </div>
                 <select value={o.status} onChange={(e) => setOrderStatus(o.id, e.target.value)} style={{ ...inputS, width: 170, height: 38, color: ORDER_STATUS[o.status]?.color }}>
@@ -349,6 +354,111 @@ export default function Admin({ v }: { v: Vals }) {
         </div>
       )}
 
+      {/* ===== GAMES ===== */}
+      {tab === 'games' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+          {!gForm && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+              <div style={{ fontSize: 13, color: 'var(--t3,#878e9a)' }}>เกมที่เพิ่มจะโผล่ทุกหน้าอัตโนมัติ — แล้วไปตั้งราคาที่แท็บ 💰 และใส่รูปที่แท็บ 🖼️</div>
+              <div onClick={() => setGForm({ id: '', name: '', short: '', genre: '', currency: '', from: '10', cat: 'moba', platform: 'mobile', alias: '', desc: '', isNew: true, c1: '#6d6af5', c2: '#8b91ff' })} style={btnAcc}>+ เพิ่มเกมใหม่</div>
+            </div>
+          )}
+
+          {gForm && (
+            <div style={card}>
+              <div style={{ fontFamily: "'Space Grotesk','IBM Plex Sans Thai'", fontWeight: 600, fontSize: 17, marginBottom: 18 }}>{gForm.id ? 'แก้ไขเกม: ' + gForm.name : 'เพิ่มเกมใหม่'}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 130px 150px 160px', gap: 12, marginBottom: 12 }}>
+                <div>{label('ชื่อเกม')}<input value={gForm.name} onChange={(e) => setGForm({ ...gForm, name: e.target.value })} placeholder="เช่น Zenless Zone Zero" style={inputS} /></div>
+                <div>{label('ชื่อย่อ (2–6 ตัว)')}<input value={gForm.short} onChange={(e) => setGForm({ ...gForm, short: e.target.value.toUpperCase() })} placeholder="ZZZ" style={inputS} /></div>
+                <div>{label('หมวด')}<select value={gForm.cat} onChange={(e) => setGForm({ ...gForm, cat: e.target.value })} style={inputS}>
+                  <option value="moba">MOBA</option><option value="fps">FPS</option><option value="br">Battle Royale</option><option value="rpg">RPG</option><option value="other">อื่นๆ</option><option value="platform">บัตร & แพลตฟอร์ม</option>
+                </select></div>
+                <div>{label('แพลตฟอร์ม')}<select value={gForm.platform} onChange={(e) => setGForm({ ...gForm, platform: e.target.value })} style={inputS}>
+                  <option value="mobile">มือถือ</option><option value="pc">PC</option><option value="cross">มือถือ + PC</option><option value="platform">บัตรเติม</option>
+                </select></div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '200px 150px 1fr', gap: 12, marginBottom: 12 }}>
+                <div>{label('สกุลเงินในเกม')}<input value={gForm.currency} onChange={(e) => setGForm({ ...gForm, currency: e.target.value })} placeholder="เช่น Monochrome" style={inputS} /></div>
+                <div>{label('ราคาเริ่มต้น (฿)')}<input value={gForm.from} onChange={(e) => setGForm({ ...gForm, from: e.target.value })} style={inputS} inputMode="numeric" /></div>
+                <div>{label('ประเภทเกม (โชว์บนการ์ด)')}<input value={gForm.genre} onChange={(e) => setGForm({ ...gForm, genre: e.target.value })} placeholder="เช่น Action RPG" style={inputS} /></div>
+              </div>
+              {label('สีการ์ด (ใช้ตอนยังไม่มีรูป)')}
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+                {[['#fb7185', '#f43f5e'], ['#fbbf24', '#f97316'], ['#fbbf24', '#ef4444'], ['#60a5fa', '#3b82f6'], ['#22d3ee', '#6366f1'], ['#38bdf8', '#818cf8'], ['#a78bfa', '#7c3aed'], ['#f472b6', '#db2777'], ['#34d399', '#059669'], ['#84cc16', '#4d7c0f'], ['#fb923c', '#ea580c'], ['#6d6af5', '#8b91ff']].map(([c1, c2]) => (
+                  <div key={c1 + c2} onClick={() => setGForm({ ...gForm, c1, c2 })} style={{ width: 38, height: 38, borderRadius: 10, cursor: 'pointer', background: `linear-gradient(140deg,${c1},${c2})`, outline: gForm.c1 === c1 && gForm.c2 === c2 ? '2.5px solid #fff' : 'none', outlineOffset: 2 }} />
+                ))}
+              </div>
+              {label('คำค้นหา (ชื่อไทย/ชื่อย่อ ใช้ตอนลูกค้าเสิร์ช คั่นด้วยช่องว่าง)')}
+              <input value={gForm.alias} onChange={(e) => setGForm({ ...gForm, alias: e.target.value })} placeholder="เช่น เซนเลส zzz zone zero" style={{ ...inputS, marginBottom: 12 }} />
+              {label('คำอธิบายเกม')}
+              <textarea value={gForm.desc} onChange={(e) => setGForm({ ...gForm, desc: e.target.value })} rows={3} placeholder="คำอธิบายสั้นๆ โชว์บนหน้าเกมและสไลด์" style={{ ...inputS, height: 'auto', padding: 12, lineHeight: 1.7, resize: 'vertical' }} />
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '14px 0 18px', fontSize: 13.5, cursor: 'pointer', color: 'var(--t2b,#c4c8d2)' }}>
+                <input type="checkbox" checked={!!gForm.isNew} onChange={(e) => setGForm({ ...gForm, isNew: e.target.checked })} style={{ width: 16, height: 16, accentColor: '#6d6af5' }} />
+                ติดป้าย NEW บนการ์ด
+              </label>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <div onClick={async () => {
+                  const payload = { ...gForm, from: Number(gForm.from) }
+                  const r = await call(gForm.id ? '/api/admin/games/' + gForm.id : '/api/admin/games', gForm.id ? 'PUT' : 'POST', payload)
+                  if (r.ok) { setGForm(null); showToast(gForm.id ? 'บันทึกเกมแล้ว' : 'เพิ่มเกมแล้ว — ไปตั้งราคาและใส่รูปต่อได้เลย', '🎮'); loadContent() }
+                  else showToast(r.data.message || 'บันทึกไม่สำเร็จ', '⚠️')
+                }} style={btnAcc}>{gForm.id ? 'บันทึกการแก้ไข' : 'เพิ่มเกม'}</div>
+                <div onClick={() => setGForm(null)} style={btnGhost}>ยกเลิก</div>
+              </div>
+            </div>
+          )}
+
+          {!gForm && (
+            <>
+              <div style={card}>
+                <div style={{ fontFamily: "'Space Grotesk','IBM Plex Sans Thai'", fontWeight: 600, fontSize: 16, marginBottom: 14 }}>เกมที่คุณเพิ่มเอง ({customGames.length})</div>
+                {customGames.length === 0 && <div style={{ color: 'var(--t3b,#6c727e)', fontSize: 13.5 }}>ยังไม่มี — กด "+ เพิ่มเกมใหม่" ได้เลย</div>}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {customGames.map((g0) => (
+                    <div key={g0.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: 'var(--s-inset,#161922)', borderRadius: 11, fontSize: 13, flexWrap: 'wrap' }}>
+                      <GameBadge g={g0} />
+                      <div style={{ flex: 1, minWidth: 150 }}>
+                        <div style={{ fontWeight: 600 }}>{g0.name} {g0.isNew && <span style={{ fontSize: 10, fontWeight: 700, color: '#07080d', background: 'var(--ok,#4ade80)', borderRadius: 5, padding: '1px 6px', marginLeft: 4 }}>NEW</span>}</div>
+                        <div style={{ fontSize: 11.5, color: 'var(--t3,#878e9a)' }}>{g0.genre} · {g0.currency} · เริ่ม ฿{g0.from}</div>
+                      </div>
+                      <div onClick={() => setGForm({ ...g0, from: String(g0.from), isNew: !!g0.isNew })} style={{ ...btnGhost, height: 34, padding: '0 12px', fontSize: 12 }}>แก้ไข</div>
+                      <div onClick={async () => {
+                        if (!window.confirm(`ลบ ${g0.name} ถาวร? (ราคา/รูปของเกมนี้จะถูกลบด้วย)`)) return
+                        const r = await call('/api/admin/games/' + g0.id, 'DELETE')
+                        if (r.ok) { showToast('ลบเกมแล้ว', '🗑️'); loadContent() }
+                      }} style={{ ...btnGhost, height: 34, padding: '0 12px', fontSize: 12, color: '#f87171' }}>ลบ</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div style={card}>
+                <div style={{ fontFamily: "'Space Grotesk','IBM Plex Sans Thai'", fontWeight: 600, fontSize: 16, marginBottom: 4 }}>เกมในระบบ ({GAMES.length})</div>
+                <div style={{ fontSize: 12, color: 'var(--t3b,#6c727e)', marginBottom: 14 }}>เกมตั้งต้นของเว็บ แก้ไขไม่ได้แต่<b style={{ color: 'var(--t2b,#c4c8d2)' }}>ซ่อนจากหน้าเว็บ</b>ได้ (ซ่อนแล้วลูกค้าไม่เห็น เปิดกลับได้ตลอด)</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {GAMES.map((g0) => {
+                    const hidden = hiddenGames.includes(g0.id)
+                    return (
+                      <div key={g0.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: 'var(--s-inset,#161922)', borderRadius: 11, fontSize: 13, flexWrap: 'wrap', opacity: hidden ? .45 : 1 }}>
+                        <GameBadge g={g0} />
+                        <div style={{ flex: 1, minWidth: 150 }}>
+                          <div style={{ fontWeight: 600 }}>{g0.name}</div>
+                          <div style={{ fontSize: 11.5, color: 'var(--t3,#878e9a)' }}>{g0.genre} · {g0.currency}</div>
+                        </div>
+                        <div onClick={async () => {
+                          const next = hidden ? hiddenGames.filter((x) => x !== g0.id) : [...hiddenGames, g0.id]
+                          const r = await call('/api/admin/settings/hidden-games', 'PUT', { ids: next })
+                          if (r.ok) { showToast(hidden ? 'แสดง ' + g0.name + ' แล้ว' : 'ซ่อน ' + g0.name + ' แล้ว', hidden ? '👁️' : '🙈'); loadContent() }
+                        }} style={{ ...btnGhost, height: 34, padding: '0 12px', fontSize: 12, color: hidden ? 'var(--ok,#4ade80)' : 'var(--t3,#878e9a)' }}>{hidden ? 'แสดง' : 'ซ่อน'}</div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
       {/* ===== PACKAGES & PRICES ===== */}
       {tab === 'pkgs' && (
         <div style={card}>
@@ -356,7 +466,7 @@ export default function Admin({ v }: { v: Vals }) {
             <div>
               {label('เลือกเกม')}
               <select value={gid} onChange={(e) => setGid(e.target.value)} style={{ ...inputS, width: 260 }}>
-                {GAMES.map((x) => <option key={x.id} value={x.id}>{x.name} ({x.currency})</option>)}
+                {gamesAll.map((x) => <option key={x.id} value={x.id}>{x.name} ({x.currency})</option>)}
               </select>
             </div>
             <div style={{ paddingTop: 20, fontSize: 12.5, color: custom ? 'var(--ok,#4ade80)' : 'var(--t3b,#6c727e)' }}>
@@ -489,7 +599,7 @@ export default function Admin({ v }: { v: Vals }) {
           <div style={card}>
             <div style={{ fontFamily: "'Space Grotesk','IBM Plex Sans Thai'", fontWeight: 600, fontSize: 16, marginBottom: 16 }}>รูปเกม</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {GAMES.map((g0) => (
+              {gamesAll.map((g0) => (
                 <div key={g0.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 16, padding: '12px 14px', background: 'var(--s-inset,#161922)', borderRadius: 13, flexWrap: 'wrap' }}>
                   <div style={{ flex: 1, minWidth: 140, paddingTop: 6 }}>
                     <div style={{ fontWeight: 600, fontSize: 14 }}>{g0.name}</div>

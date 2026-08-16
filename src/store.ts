@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { GAMES, PKGS, COUPONS, TICKER, SEED_ORDERS, type Order, type Pkg } from './data'
+import { GAMES, PKGS, COUPONS, TICKER, SEED_ORDERS, mergedGames, type Game, type Order, type Pkg } from './data'
 
 export type SearchFocus = false | 'nav' | 'hero' | 'catalog'
 export type PayStatus = 'idle' | 'awaiting' | 'processing' | 'success'
@@ -34,6 +34,7 @@ export type State = {
   isAdmin: boolean; pkgMap: Record<string, Pkg[]>; articles: ServerArticle[] | null
   siteTicker: string[] | null; customCoupons: boolean
   serverImages: Record<string, number>
+  customGames: Game[]; hiddenGames: string[]
 }
 
 type Actions = {
@@ -87,9 +88,9 @@ function nowTime(): string {
 function scrollTop() { if (typeof window !== 'undefined') window.scrollTo(0, 0) }
 
 // ── keyword fallback bot ─────────────────────────────────────────────────────
-function detectGames(t: string): string[] {
+function detectGames(t: string, games: Game[]): string[] {
   const found: string[] = []
-  for (const gm of GAMES) {
+  for (const gm of games) {
     const keys: string[] = []
     if (gm.short.length >= 3) keys.push(gm.short.toLowerCase())
     gm.name.toLowerCase().split(/\s+/).forEach((w) => { if (w.length >= 4) keys.push(w) })
@@ -98,7 +99,7 @@ function detectGames(t: string): string[] {
   }
   return found.slice(0, 3)
 }
-function composeReply(text: string, hadImg: boolean, orders: Order[]): Array<Omit<ChatMsg, 'id' | 'time' | 'role'>> {
+function composeReply(text: string, hadImg: boolean, orders: Order[], games: Game[]): Array<Omit<ChatMsg, 'id' | 'time' | 'role'>> {
   const t = (text || '').toLowerCase()
   const has = (...a: string[]) => a.some((k) => t.includes(k))
   if (hadImg) return [{ kind: 'text', text: 'ได้รับรูปแล้วค่ะ 📷 ฉันส่งต่อให้ทีมงานตรวจสอบให้นะคะ หากเป็นสลิปการชำระเงิน รบกวนแจ้งเลขออเดอร์ด้วย จะได้ตรวจสอบให้เร็วขึ้นค่ะ' }]
@@ -111,7 +112,7 @@ function composeReply(text: string, hadImg: boolean, orders: Order[]): Array<Omi
   if (has('จ่าย', 'ชำระ', 'payment', 'pay', 'พร้อมเพย์', 'promptpay', 'truemoney', 'บัตร', 'crypto')) {
     return [{ kind: 'text', text: 'รองรับ TrueMoney, PromptPay, บัตรเครดิต และ Crypto (USDT) ค่ะ 💳 จ่ายด้วย Crypto รับส่วนลดเพิ่ม 5% และเครดิตเข้าทันทีหลังชำระเงินค่ะ' }]
   }
-  const detected = detectGames(t)
+  const detected = detectGames(t, games)
   if (detected.length) {
     return [{ kind: 'text', text: 'ได้เลยค่ะ! เลือกเกมที่ต้องการเติมด้านล่างนี้ได้เลย แตะแล้วจะพาไปหน้าเติมพร้อมแพ็กเกจยอดนิยมให้ค่ะ 👇' }, { kind: 'cards', cards: detected }]
   }
@@ -126,10 +127,10 @@ function composeReply(text: string, hadImg: boolean, orders: Order[]): Array<Omi
   }
   return [{ kind: 'text', text: 'ขอโทษค่ะ ฉันอาจจะยังไม่เข้าใจคำถามทั้งหมด แต่ช่วยได้ในเรื่องเหล่านี้ค่ะ — เลือกเมนูลัดด้านล่าง หรือพิมพ์ชื่อเกมที่อยากเติมได้เลยนะคะ 💬' }]
 }
-function buildPrompt(latest: string, hadImg: boolean, chatLog: ChatMsg[], orders: Order[]): string {
-  const gameList = GAMES.map((g) => `- ${g.id}: ${g.name} (${g.currency}, เริ่ม ฿${g.from})`).join('\n')
+function buildPrompt(latest: string, hadImg: boolean, chatLog: ChatMsg[], orders: Order[], games: Game[]): string {
+  const gameList = games.map((g) => `- ${g.id}: ${g.name} (${g.currency}, เริ่ม ฿${g.from})`).join('\n')
   const o = orders[0]
-  const og = GAMES.find((x) => x.id === o.gid)
+  const og = games.find((x) => x.id === o.gid)
   const stTxt = o.status === 'success' ? 'สำเร็จ' : o.status === 'pending' ? 'กำลังดำเนินการ' : 'ไม่สำเร็จ'
   const hist = chatLog.slice(-8).map((m) => {
     const who = m.role === 'bot' ? 'Vera' : 'ลูกค้า'
@@ -208,6 +209,7 @@ export const useStore = create<Store>((set, get) => {
     timers.tt = setTimeout(() => set({ toast: null }), 2400)
   }
   const orders = () => get().myOrders || SEED_ORDERS
+  const liveGames = () => mergedGames(get().customGames, get().hiddenGames)
 
   async function botRespond(text: string, hadImg: boolean) {
     set({ chatTyping: true })
@@ -215,7 +217,7 @@ export const useStore = create<Store>((set, get) => {
       const resp = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: buildPrompt(text, hadImg, get().chatLog, orders()) }),
+        body: JSON.stringify({ prompt: buildPrompt(text, hadImg, get().chatLog, orders(), liveGames()) }),
       })
       if (!resp.ok) throw new Error('proxy ' + resp.status)
       const data = await resp.json()
@@ -227,13 +229,13 @@ export const useStore = create<Store>((set, get) => {
       if (timers.ct) clearTimeout(timers.ct)
       timers.ct = setTimeout(() => {
         set({ chatTyping: false })
-        composeReply(text, hadImg, orders()).forEach((r) => pushMsg({ role: 'bot', ...r }))
+        composeReply(text, hadImg, orders(), liveGames()).forEach((r) => pushMsg({ role: 'bot', ...r }))
       }, 550 + Math.random() * 350)
     }
   }
   function applyAiReply(raw: string, text: string, hadImg: boolean) {
     let txt = (raw || '').trim()
-    if (!txt) { composeReply(text, hadImg, orders()).forEach((r) => pushMsg({ role: 'bot', ...r })); return }
+    if (!txt) { composeReply(text, hadImg, orders(), liveGames()).forEach((r) => pushMsg({ role: 'bot', ...r })); return }
     const games: string[] = []
     txt = txt.replace(/\[GAMES?:\s*([a-z0-9,\s]+?)\s*\]/gi, (_m, ids: string) => { ids.toLowerCase().split(/[,\s]+/).forEach((id) => { if (id) games.push(id) }); return '' })
     let wantOrder = false
@@ -241,7 +243,7 @@ export const useStore = create<Store>((set, get) => {
     txt = txt.replace(/\s{2,}/g, ' ').trim()
     if (txt) pushMsg({ role: 'bot', kind: 'text', text: txt })
     if (wantOrder) pushMsg({ role: 'bot', kind: 'order', order: orders()[0] })
-    const valid = games.filter((id) => GAMES.some((g) => g.id === id)).slice(0, 3)
+    const valid = games.filter((id) => liveGames().some((g) => g.id === id)).slice(0, 3)
     if (valid.length) pushMsg({ role: 'bot', kind: 'cards', cards: valid })
   }
 
@@ -259,13 +261,14 @@ export const useStore = create<Store>((set, get) => {
     chatLog: [{ id: 1, role: 'bot', kind: 'text', text: 'สวัสดีค่ะ! ฉันชื่อ Vera ผู้ช่วยเติมเกมของ gamedverygood ถามได้เลยว่าอยากเติมเกมอะไร เช็คสถานะออเดอร์ หรือสอบถามโปรโมชั่นค่ะ', time: '09:24' }],
     user: null, points: null, authBusy: false, authError: '',
     isAdmin: false, pkgMap: {}, articles: null, siteTicker: null, customCoupons: false, serverImages: {},
+    customGames: [], hiddenGames: [],
 
     // ── actions ──
     set: patch,
     orders,
     go: (route) => { set({ route, payStatus: 'idle' }); scrollTop() },
     openGame: (id) => { set({ game: id, route: 'detail', payStatus: 'idle' }); scrollTop() },
-    reorder: (gid, pkg) => { const gm = GAMES.find((x) => x.id === gid); showToast('กำลังพาไปเติม ' + (gm ? gm.name : 'เกม'), '⚡'); set({ game: gid, pkg, route: 'topup', payStatus: 'idle' }); scrollTop() },
+    reorder: (gid, pkg) => { const gm = liveGames().find((x) => x.id === gid); showToast('กำลังพาไปเติม ' + (gm ? gm.name : 'เกม'), '⚡'); set({ game: gid, pkg, route: 'topup', payStatus: 'idle' }); scrollTop() },
 
     doPay: () => {
       if (get().payStatus !== 'idle') return
@@ -297,7 +300,7 @@ export const useStore = create<Store>((set, get) => {
     toggleFav: (id, e) => {
       e?.stopPropagation?.()
       const willFav = !get().favorites[id]
-      const gm = GAMES.find((x) => x.id === id)
+      const gm = liveGames().find((x) => x.id === id)
       showToast(willFav ? 'เพิ่ม ' + (gm ? gm.name : '') + ' ในรายการโปรด' : 'นำออกจากรายการโปรดแล้ว', willFav ? '♥' : '♡')
       set((s) => { const f = { ...s.favorites }; if (f[id]) delete f[id]; else f[id] = true; return { favorites: f } })
       if (get().user) api('/api/me/favorites', { gameId: id, faved: willFav })
@@ -402,7 +405,8 @@ export const useStore = create<Store>((set, get) => {
       if (resp.ok) { get().setServerImage(slotId, null); showToast('ลบรูปแล้ว กลับไปใช้พื้นไล่สี', '🗑️') }
     },
     loadContent: async () => {
-      const [pk, ar, si, im] = await Promise.all([api('/api/packages'), api('/api/articles'), api('/api/site'), api('/api/images')])
+      const [pk, ar, si, im, gm] = await Promise.all([api('/api/packages'), api('/api/articles'), api('/api/site'), api('/api/images'), api('/api/games')])
+      if (gm.ok && gm.data) set({ customGames: gm.data.games || [], hiddenGames: gm.data.hidden || [] })
       if (pk.ok && pk.data) get().applyPackages(pk.data.packages || {})
       if (ar.ok && ar.data && Array.isArray(ar.data.articles)) {
         set({

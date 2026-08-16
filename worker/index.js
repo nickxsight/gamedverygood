@@ -51,6 +51,24 @@ async function migrate(db) {
       data TEXT NOT NULL,
       updated_at INTEGER NOT NULL
     )`),
+    // Admin-created games, merged into the built-in catalog on the client.
+    db.prepare(`CREATE TABLE IF NOT EXISTS games (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      short TEXT NOT NULL,
+      genre TEXT NOT NULL DEFAULT '',
+      currency TEXT NOT NULL DEFAULT '',
+      from_price INTEGER NOT NULL DEFAULT 10,
+      c1 TEXT NOT NULL DEFAULT '#6d6af5',
+      c2 TEXT NOT NULL DEFAULT '#8b91ff',
+      cat TEXT NOT NULL DEFAULT 'other',
+      platform TEXT NOT NULL DEFAULT 'mobile',
+      alias TEXT NOT NULL DEFAULT '',
+      desc TEXT NOT NULL DEFAULT '',
+      is_new INTEGER NOT NULL DEFAULT 1,
+      sort INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`),
   ])
   // Admin-managed content: per-game packages and news articles.
   await db.batch([
@@ -296,6 +314,18 @@ async function handleContent(env, path) {
     const nCoupons = await db.prepare('SELECT COUNT(*) AS n FROM coupons').first()
     return json({ ticker: Array.isArray(ticker) && ticker.length ? ticker : null, customCoupons: nCoupons.n > 0 })
   }
+  if (path === '/api/games') {
+    const rows = await db.prepare('SELECT * FROM games ORDER BY sort, rowid').all()
+    const hidden = await getSetting(db, 'hiddenGames')
+    return json({
+      games: (rows.results || []).map((r) => ({
+        id: r.id, short: r.short, name: r.name, genre: r.genre, currency: r.currency,
+        from: r.from_price, c1: r.c1, c2: r.c2, cat: r.cat, platform: r.platform,
+        alias: r.alias, desc: r.desc, isNew: !!r.is_new,
+      })),
+      hidden: Array.isArray(hidden) ? hidden : [],
+    })
+  }
   if (path === '/api/images') {
     const rows = await db.prepare('SELECT slot_id, updated_at FROM images').all()
     const slots = {}
@@ -442,6 +472,69 @@ async function handleAdmin(request, env, path, url) {
   if (cpnMatch && request.method === 'DELETE') {
     await db.prepare('DELETE FROM coupons WHERE code = ?').bind(cpnMatch[1]).run()
     return json({ ok: true })
+  }
+
+  // ---- game catalog (custom games + hiding built-ins) ----
+  const parseGame = async () => {
+    const b = await readBody(request)
+    const hex = (v, d) => /^#[0-9a-fA-F]{6}$/.test(String(v || '')) ? String(v) : d
+    const name = String((b && b.name) || '').trim().slice(0, 60)
+    const short = String((b && b.short) || '').trim().toUpperCase().slice(0, 6)
+    const fromP = Math.round(Number((b && b.from) || 0))
+    if (!name || !short) return { error: json({ message: 'กรอกชื่อเกมและชื่อย่อให้ครบ' }, 400) }
+    if (!Number.isFinite(fromP) || fromP < 1 || fromP > 1000000) return { error: json({ message: 'ราคาเริ่มต้นต้องอยู่ระหว่าง 1–1,000,000' }, 400) }
+    const cats = ['moba', 'fps', 'br', 'rpg', 'other', 'platform']
+    const plats = ['mobile', 'pc', 'cross', 'platform']
+    return {
+      name, short, from: fromP,
+      genre: String((b && b.genre) || '').trim().slice(0, 30) || 'เกม',
+      currency: String((b && b.currency) || '').trim().slice(0, 30) || 'Credit',
+      c1: hex(b && b.c1, '#6d6af5'), c2: hex(b && b.c2, '#8b91ff'),
+      cat: cats.includes(b && b.cat) ? b.cat : 'other',
+      platform: plats.includes(b && b.platform) ? b.platform : 'mobile',
+      alias: String((b && b.alias) || '').trim().slice(0, 200),
+      desc: String((b && b.desc) || '').trim().slice(0, 500),
+      isNew: (b && b.isNew) ? 1 : 0,
+    }
+  }
+  if (path === '/api/admin/games' && request.method === 'POST') {
+    const g = await parseGame()
+    if (g.error) return g.error
+    const id = 'g' + randomToken().slice(0, 8)
+    await db.prepare(
+      'INSERT INTO games (id, name, short, genre, currency, from_price, c1, c2, cat, platform, alias, desc, is_new) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    ).bind(id, g.name, g.short, g.genre, g.currency, g.from, g.c1, g.c2, g.cat, g.platform, g.alias, g.desc, g.isNew).run()
+    return json({ ok: true, id })
+  }
+  const gmMatch = path.match(/^\/api\/admin\/games\/([a-z0-9_-]{1,40})$/)
+  if (gmMatch) {
+    const id = gmMatch[1]
+    if (request.method === 'PUT') {
+      const g = await parseGame()
+      if (g.error) return g.error
+      const row = await db.prepare(
+        'UPDATE games SET name = ?, short = ?, genre = ?, currency = ?, from_price = ?, c1 = ?, c2 = ?, cat = ?, platform = ?, alias = ?, desc = ?, is_new = ? WHERE id = ? RETURNING id',
+      ).bind(g.name, g.short, g.genre, g.currency, g.from, g.c1, g.c2, g.cat, g.platform, g.alias, g.desc, g.isNew, id).first()
+      if (!row) return json({ message: 'ไม่พบเกมนี้ (แก้ได้เฉพาะเกมที่เพิ่มเอง)' }, 404)
+      return json({ ok: true })
+    }
+    if (request.method === 'DELETE') {
+      await db.batch([
+        db.prepare('DELETE FROM games WHERE id = ?').bind(id),
+        db.prepare('DELETE FROM packages WHERE gid = ?').bind(id),
+        db.prepare('DELETE FROM images WHERE slot_id IN (?, ?)').bind('img-' + id, 'banner-' + id),
+      ])
+      return json({ ok: true })
+    }
+  }
+  if (path === '/api/admin/settings/hidden-games' && request.method === 'PUT') {
+    const b = await readBody(request)
+    const ids = (Array.isArray(b && b.ids) ? b.ids : [])
+      .map((t) => String(t).trim().slice(0, 40)).filter(Boolean).slice(0, 100)
+    if (ids.length === 0) await db.prepare("DELETE FROM settings WHERE key = 'hiddenGames'").run()
+    else await db.prepare("INSERT INTO settings (key, value) VALUES ('hiddenGames', ?) ON CONFLICT(key) DO UPDATE SET value = ?")
+      .bind(JSON.stringify(ids), JSON.stringify(ids)).run()
+    return json({ ok: true, hidden: ids })
   }
 
   // ---- artwork uploads ----
@@ -711,7 +804,7 @@ export default {
       }
     }
 
-    if (path === '/api/packages' || path === '/api/articles' || path === '/api/site' || path === '/api/images' || path.startsWith('/api/images/')) {
+    if (path === '/api/packages' || path === '/api/articles' || path === '/api/site' || path === '/api/games' || path === '/api/images' || path.startsWith('/api/images/')) {
       try {
         return await handleContent(env, path)
       } catch (err) {

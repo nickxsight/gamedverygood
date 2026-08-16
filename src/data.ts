@@ -117,3 +117,11 @@ export const DAILY: Record<string, number> = { freefire: 4820, rov: 3960, valora
 export function cover(c1: string, c2: string): string {
   return `background:linear-gradient(140deg,${c1},${c2});`
 }
+
+// The live game catalog: built-in games (minus admin-hidden ones) plus
+// admin-created games from the server.
+export function mergedGames(custom: Game[], hidden: string[]): Game[] {
+  const hide = new Set(hidden)
+  const out = [...GAMES.filter((g) => !hide.has(g.id)), ...custom]
+  return out.length ? out : GAMES // never let the catalog go empty
+}
