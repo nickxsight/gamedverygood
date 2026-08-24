@@ -867,6 +867,211 @@ async function handleAccount(request, env, path) {
   return json({ message: 'not found' }, 404)
 }
 
+// ── SEO: robots.txt, sitemap.xml, per-page meta injection ───────────────────
+// Crawlers (and LINE/Facebook link previews) don't run the SPA's JavaScript,
+// so the Worker injects the right <title>/description/OG/JSON-LD into the
+// HTML shell per URL before it leaves the server. Which paths reach the
+// Worker at all is controlled by run_worker_first in wrangler.jsonc.
+const SEO_TITLE = 'gamedverygood — เติมเกม ข่าวสาร Tools ครบวงจร'
+const SEO_DESC = 'แพลตฟอร์มเติมเกม ข่าวสาร และ Tools ครบวงจร — เร็ว ปลอดภัย เชื่อถือได้'
+
+// Mirror of the client's built-in catalog (src/data.ts) — the Worker can't
+// import the client bundle, and game pages need correct tags without a DB hit.
+const SEO_GAMES = [
+  { id: 'ro', name: 'Ragnarok Online', currency: 'Cash Point', from: 35, desc: 'ตำนาน MMORPG ที่อยู่คู่คนไทยมากว่า 20 ปี เติม Cash Point เพื่อปลดล็อกไอเทมและคอสตูมสุดหายาก' },
+  { id: 'ro3', name: 'Ragnarok Origin', currency: 'Nyan Coin', from: 30, desc: 'Ragnarok โฉมใหม่บนมือถือ กราฟิกสวยจัดเต็ม เติม Nyan Coin รับโบนัสและกาชาพิเศษทุกวัน' },
+  { id: 'valorant', name: 'Valorant', currency: 'VP', from: 39, desc: 'เกม FPS แทคติคอลสุดเดือดจาก Riot เติม VP เพื่อปลดล็อกสกินอาวุธและ Battle Pass' },
+  { id: 'rov', name: 'RoV', currency: 'Coupon', from: 6, desc: 'MOBA 5v5 อันดับ 1 ของไทย เติมคูปองเพื่อสุ่มฮีโร่ สกิน และไอเทมในกิจกรรม' },
+  { id: 'freefire', name: 'Free Fire', currency: 'Diamond', from: 6, desc: 'Battle Royale ยอดฮิตบนมือถือ เติมเพชรเพื่อกาชา ตัวละคร และสกินปืนสุดเท่' },
+  { id: 'roblox', name: 'Roblox', currency: 'Robux', from: 25, desc: 'จักรวาลเกมไม่รู้จบ เติม Robux เพื่อซื้อไอเทม เกมพาส และอวตารในทุกเกม' },
+  { id: 'genshin', name: 'Genshin Impact', currency: 'Genesis Crystal', from: 30, desc: 'เกมผจญภัยโลกเปิดสุดอลังการ เติม Genesis Crystal เพื่อสุ่มตัวละครและอาวุธ 5 ดาว' },
+  { id: 'hsr', name: 'Honkai: Star Rail', currency: 'Oneiric Shard', from: 30, desc: 'เกม RPG เทิร์นเบสจาก HoYoverse เติม Oneiric Shard เพื่อกาชาตัวละครและ Light Cone' },
+  { id: 'mlbb', name: 'Mobile Legends', currency: 'Diamond', from: 7, desc: 'MOBA 5v5 ยอดฮิตทั่วเอเชีย เติมเพชรเพื่อสกินฮีโร่และไอเทมในอีเวนต์' },
+  { id: 'pubgm', name: 'PUBG Mobile', currency: 'UC', from: 8, desc: 'Battle Royale ระดับตำนานบนมือถือ เติม UC เพื่อ Royale Pass และสกินปืน' },
+  { id: 'codm', name: 'Call of Duty Mobile', currency: 'CP', from: 9, desc: 'FPS/BR สุดมันส์บนมือถือ เติม CP เพื่อปลดล็อก Battle Pass และสกินตัวละคร' },
+  { id: 'lol', name: 'League of Legends', currency: 'RP', from: 35, desc: 'MOBA อันดับ 1 ของโลก เติม RP เพื่อปลดล็อกแชมเปียนและสกินสุดหายาก' },
+  { id: 'hok', name: 'Honor of Kings', currency: 'Token', from: 7, desc: 'MOBA ที่มีผู้เล่นมากที่สุดในโลก เติม Token เพื่อฮีโร่และสกินระดับตำนาน' },
+  { id: 'idv', name: 'Identity V', currency: 'Echoes', from: 15, desc: 'เกมเอาชีวิตรอด 1v4 สไตล์โกธิค เติม Echoes เพื่อตัวละครและคอสตูมสุดหลอน' },
+  { id: 'arena', name: 'Arena Breakout', currency: 'Bond', from: 12, desc: 'เกมยิงแนว Extraction สมจริง เติม Bond เพื่อไอเทมและแพ็กเกจในเกม' },
+  { id: 'steam', name: 'Steam Wallet', currency: 'THB Credit', from: 100, desc: 'เติมเงินเข้า Steam Wallet เพื่อซื้อเกม DLC และไอเทมในเกมโปรดของคุณ' },
+  { id: 'gplay', name: 'Google Play', currency: 'THB Credit', from: 50, desc: 'บัตรเติมเงิน Google Play ใช้ซื้อแอป เกม และไอเทมในทุกเกมบน Android' },
+]
+// Demo articles (src/data.ts NEWS) — shown until the first admin article exists.
+const SEO_NEWS = [
+  { id: 'n1', title: 'Valorant แพตช์ 9.0 ปรับสมดุลเอเจนต์ครั้งใหญ่', excerpt: 'Riot เปิดตัวการปรับสมดุลครั้งใหญ่ที่สุดของปี พร้อมแมพใหม่และโหมดจัดอันดับที่ปรับปรุงใหม่' },
+  { id: 'n2', title: 'ทีมไทยคว้าแชมป์ RoV Pro League ฤดูกาลล่าสุด', excerpt: 'ความสำเร็จครั้งประวัติศาสตร์ของวงการอีสปอร์ตไทยบนเวทีระดับภูมิภาค' },
+  { id: 'n3', title: 'รีวิว Ragnarok Origin คุ้มไหมกับการกลับมา', excerpt: 'เจาะลึกระบบเกม กราฟิก และความคุ้มค่าในการเติมของ RO โฉมใหม่บนมือถือ' },
+  { id: 'n4', title: 'Free Fire แจกเพชรฟรีกิจกรรมครบรอบ', excerpt: 'รวมทุกวิธีรับเพชรและไอเทมฟรีในกิจกรรมครบรอบปีนี้ก่อนใคร' },
+  { id: 'n5', title: '10 ทริควาง Build สาย Mage ใน RO3 ปังสุด', excerpt: 'รวมเทคนิคการจัดสเตตัสและไอเทมสำหรับสาย Mage ที่อัปเดตล่าสุด' },
+  { id: 'n6', title: 'Roblox เปิดตัวระบบเศรษฐกิจใหม่สำหรับครีเอเตอร์', excerpt: 'ระบบแบ่งรายได้และ marketplace ใหม่ที่จะเปลี่ยนวงการ UGC ไปตลอดกาล' },
+]
+const SEO_LEGAL = {
+  terms: 'ข้อกำหนดการใช้งาน', privacy: 'นโยบายความเป็นส่วนตัว', refund: 'นโยบายการคืนเงินและการยกเลิก',
+}
+
+const escapeHtml = (s) => String(s)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+
+// D1 access that never breaks page serving — SEO falls back to built-ins.
+async function seoDb(env) {
+  if (!env.DB) return null
+  try { await ensureSchema(env.DB); return env.DB } catch { return null }
+}
+
+async function seoGame(env, id) {
+  const builtin = SEO_GAMES.find((g) => g.id === id)
+  if (builtin) return builtin
+  const db = await seoDb(env)
+  if (!db) return null
+  const r = await db.prepare('SELECT name, currency, from_price, desc FROM games WHERE id = ?').bind(id).first()
+  return r ? { id, name: r.name, currency: r.currency, from: r.from_price, desc: r.desc } : null
+}
+
+async function seoArticle(env, id) {
+  const m = id.match(/^a(\d{1,10})$/)
+  if (m) {
+    const db = await seoDb(env)
+    if (!db) return null
+    const r = await db.prepare('SELECT title, excerpt, created_at FROM articles WHERE id = ? AND published = 1').bind(Number(m[1])).first()
+    return r ? { id, title: r.title, excerpt: r.excerpt, createdAt: r.created_at } : null
+  }
+  return SEO_NEWS.find((n) => n.id === id) || null
+}
+
+// Absolute URL for an admin-uploaded image slot, or null when none exists.
+async function seoImage(env, origin, slot) {
+  const db = await seoDb(env)
+  if (!db) return null
+  const r = await db.prepare('SELECT updated_at FROM images WHERE slot_id = ?').bind(slot).first()
+  return r ? `${origin}/api/images/${slot}?v=${r.updated_at}` : null
+}
+
+// Page metadata per pathname; null means "not a page the Worker decorates".
+async function seoMetaFor(env, url, path) {
+  const origin = url.origin
+  const page = (title, desc, extra = {}) => ({ title, desc, canonical: origin + path, image: null, jsonld: null, ...extra })
+
+  if (path === '/') {
+    return page(SEO_TITLE, SEO_DESC, {
+      jsonld: {
+        '@context': 'https://schema.org', '@type': 'WebSite',
+        name: 'gamedverygood', url: origin + '/', inLanguage: 'th',
+      },
+    })
+  }
+  if (path === '/catalog' || path === '/topup') {
+    return page('รวมเกมทั้งหมด — เติมเกมออนไลน์ราคาถูก | gamedverygood',
+      'เลือกเติมเกมยอดนิยม จ่ายผ่าน PromptPay TrueMoney บัตรเครดิต เข้าไวปลอดภัย', { canonical: origin + '/catalog' })
+  }
+  const gm = path.match(/^\/(game|topup)\/([A-Za-z0-9_-]{1,40})$/)
+  if (gm) {
+    const g = await seoGame(env, gm[2])
+    if (!g) return page(SEO_TITLE, SEO_DESC, { canonical: origin + '/catalog' })
+    return page(`เติมเกม ${g.name} (${g.currency}) เริ่มต้น ฿${g.from} | gamedverygood`, g.desc || SEO_DESC, {
+      // The topup flow duplicates the game page — canonicalize both to /game/.
+      canonical: `${origin}/game/${g.id || gm[2]}`,
+      image: await seoImage(env, origin, 'img-' + gm[2]),
+      jsonld: {
+        '@context': 'https://schema.org', '@type': 'Product',
+        name: `เติมเกม ${g.name} (${g.currency})`, description: g.desc || SEO_DESC,
+        offers: { '@type': 'AggregateOffer', lowPrice: g.from, priceCurrency: 'THB', availability: 'https://schema.org/InStock', url: `${origin}/game/${gm[2]}` },
+      },
+    })
+  }
+  if (path === '/news') {
+    return page('ข่าวเกม โปรโมชั่น และไกด์ล่าสุด | gamedverygood',
+      'อัปเดตข่าวสารวงการเกม โปรโมชั่นเติมเกม อีสปอร์ต และไกด์เทคนิคการเล่น อ่านฟรีทุกวัน')
+  }
+  const am = path.match(/^\/news\/([A-Za-z0-9_-]{1,20})$/)
+  if (am) {
+    const a = await seoArticle(env, am[1])
+    if (!a) return page('ข่าวเกม โปรโมชั่น และไกด์ล่าสุด | gamedverygood', SEO_DESC, { canonical: origin + '/news' })
+    const jsonld = {
+      '@context': 'https://schema.org', '@type': 'NewsArticle',
+      headline: a.title, description: a.excerpt || undefined, inLanguage: 'th',
+      mainEntityOfPage: origin + path,
+    }
+    if (a.createdAt) jsonld.datePublished = a.createdAt.replace(' ', 'T') + 'Z'
+    return page(`${a.title} | gamedverygood`, a.excerpt || SEO_DESC, {
+      image: await seoImage(env, origin, 'img-' + am[1]), jsonld,
+    })
+  }
+  if (path === '/tools') {
+    return page('Gamer Tools — เครื่องมือสำหรับเกมเมอร์ | gamedverygood',
+      'รวมเครื่องมือช่วยเล่นเกม เช่น Sensitivity Converter, Rank Tracker และ Build Optimizer ใช้ฟรี')
+  }
+  if (path === '/history') {
+    return page('บัญชีของฉันและประวัติการเติม | gamedverygood',
+      'ตรวจสอบประวัติการเติมเกม แต้มสะสม เช็คอินรายวัน และโค้ดชวนเพื่อนของคุณ')
+  }
+  const lm = path.match(/^\/legal\/(terms|privacy|refund)$/)
+  if (lm) return page(`${SEO_LEGAL[lm[1]]} | gamedverygood`, `เอกสารนโยบายการให้บริการของ gamedverygood`)
+  return null
+}
+
+// Serve the SPA shell with this page's tags swapped in.
+async function serveSeoHtml(request, env, meta) {
+  const assetResp = await env.ASSETS.fetch(request)
+  const ct = assetResp.headers.get('Content-Type') || ''
+  if (!ct.includes('text/html')) return assetResp
+  const setContent = (value) => ({ element(el) { el.setAttribute('content', value) } })
+  let head = `<link rel="canonical" href="${escapeHtml(meta.canonical)}">`
+  head += `<meta property="og:url" content="${escapeHtml(meta.canonical)}">`
+  if (meta.image) head += `<meta property="og:image" content="${escapeHtml(meta.image)}">`
+  if (meta.jsonld) head += `<script type="application/ld+json">${JSON.stringify(meta.jsonld).replace(/</g, '\\u003c')}</script>`
+  return new HTMLRewriter()
+    .on('title', { element(el) { el.setInnerContent(meta.title) } })
+    .on('meta[name="description"]', setContent(meta.desc))
+    .on('meta[property="og:title"]', setContent(meta.title))
+    .on('meta[property="og:description"]', setContent(meta.desc))
+    .on('head', { element(el) { el.append(head, { html: true }) } })
+    .transform(assetResp)
+}
+
+async function handleSeoFile(env, url, path) {
+  if (path === '/robots.txt') {
+    const body = ['User-agent: *', 'Allow: /', 'Disallow: /api/', 'Disallow: /admin', '', `Sitemap: ${url.origin}/sitemap.xml`, ''].join('\n')
+    return new Response(body, { headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'public, max-age=3600' } })
+  }
+  // sitemap.xml — static pages + the live game catalog + published articles.
+  const urls = [
+    { loc: '/', priority: '1.0' },
+    { loc: '/catalog', priority: '0.9' },
+    { loc: '/news', priority: '0.7' },
+    { loc: '/tools', priority: '0.5' },
+    { loc: '/legal/terms' }, { loc: '/legal/privacy' }, { loc: '/legal/refund' },
+  ]
+  let hidden = []
+  let customGames = []
+  let articles = null
+  const db = await seoDb(env)
+  if (db) {
+    const h = await getSetting(db, 'hiddenGames')
+    if (Array.isArray(h)) hidden = h
+    const g = await db.prepare('SELECT id FROM games ORDER BY sort, rowid').all()
+    customGames = (g.results || []).map((r) => r.id)
+    const a = await db.prepare('SELECT id, created_at FROM articles WHERE published = 1 ORDER BY id DESC LIMIT 500').all()
+    if ((a.results || []).length) articles = a.results
+  }
+  for (const g of SEO_GAMES) if (!hidden.includes(g.id)) urls.push({ loc: '/game/' + g.id, priority: '0.8' })
+  for (const id of customGames) urls.push({ loc: '/game/' + id, priority: '0.8' })
+  if (articles) {
+    for (const a of articles) urls.push({ loc: '/news/a' + a.id, lastmod: String(a.created_at).slice(0, 10), priority: '0.6' })
+  } else {
+    for (const n of SEO_NEWS) urls.push({ loc: '/news/' + n.id, priority: '0.6' })
+  }
+  const xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
+    + '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    + urls.map((u) =>
+      '  <url><loc>' + escapeHtml(url.origin + u.loc) + '</loc>'
+      + (u.lastmod ? '<lastmod>' + u.lastmod + '</lastmod>' : '')
+      + (u.priority ? '<priority>' + u.priority + '</priority>' : '')
+      + '</url>').join('\n')
+    + '\n</urlset>\n'
+  return new Response(xml, { headers: { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'public, max-age=3600' } })
+}
+
 // ── worker entry ────────────────────────────────────────────────────────────
 export default {
   async fetch(request, env) {
@@ -953,6 +1158,18 @@ export default {
       } catch (err) {
         console.error('[chat] Anthropic call failed:', err && err.message)
         return json({ error: 'upstream_failed' }, 502)
+      }
+    }
+
+    // SEO files + per-page meta injection. Any failure falls back to the
+    // plain asset response so pages always load.
+    if (request.method === 'GET' || request.method === 'HEAD') {
+      try {
+        if (path === '/robots.txt' || path === '/sitemap.xml') return await handleSeoFile(env, url, path)
+        const meta = await seoMetaFor(env, url, path)
+        if (meta) return await serveSeoHtml(request, env, meta)
+      } catch (err) {
+        console.error('[seo]', path, err && err.message)
       }
     }
 

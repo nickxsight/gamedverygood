@@ -14,7 +14,16 @@
     "directory": "./dist",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*"]
+    "run_worker_first": [
+      // APIs always hit the Worker.
+      "/api/*",
+      // SEO: these page URLs go through the Worker so it can inject
+      // per-page <title>/meta/OG/JSON-LD into the SPA shell (worker/index.js).
+      // Static assets (/assets/*, favicon, ...) stay on the fast asset path.
+      "/", "/robots.txt", "/sitemap.xml",
+      "/catalog", "/game/*", "/topup", "/topup/*",
+      "/history", "/tools", "/news", "/news/*", "/legal/*"
+    ]
   },
   "vars": {
     "ANTHROPIC_MODEL": "claude-sonnet-5"

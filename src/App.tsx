@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useStore } from './store'
 import { computeVals } from './vals'
+import { applyHead } from './seo'
 
 import PromoBar from './components/PromoBar'
 import Nav from './components/Nav'
@@ -59,6 +60,11 @@ export default function App() {
     el.style.setProperty('--acc2', VIBE[1])
     el.style.setProperty('--good', VIBE[2])
   }, [st.theme])
+
+  // Keep <title>, meta description, and canonical in sync with the page.
+  useEffect(() => { applyHead(st) },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [st.route, st.game, st.article, st.legalDoc, st.customGames, st.articles])
 
   // Timers: hero carousel rotation and price-board paging.
   useEffect(() => {
