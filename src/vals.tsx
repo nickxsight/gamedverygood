@@ -209,7 +209,6 @@ export function computeVals(st: Store) {
     }
   })
 
-  const related = games.filter((x) => x.id !== g.id).slice(0, 4)
 
   const pays = PAYS.map((p) => {
     const sel = p.id === s.pay
@@ -629,7 +628,7 @@ export function computeVals(st: Store) {
     route: s.route,
     goHome: () => st.go('home'), goTopup: () => st.go('topup'), goTools: () => st.go('tools'), goNews: () => st.go('news'), goHistory: () => st.go('history'), goCatalog: () => st.go('catalog'),
     showWallet: true,
-    nav, bottomNav, games, marquee, homeGames, heroPkgs, pkgs, related, pays, tools, featuredTools, toolFilters, news, newsFilters, feature, homeNews, gamePicker, footCols, reviews, ticker, promo, promoDots, promoTicker, priceCount, priceEmpty, boardRows, boardDotsEls, boardMultetPage, priceUpdated, priceDrops, trustBadges, orders, acctStats, orderSteps,
+    nav, bottomNav, games, marquee, homeGames, heroPkgs, pkgs, pays, tools, featuredTools, toolFilters, news, newsFilters, feature, homeNews, gamePicker, footCols, reviews, ticker, promo, promoDots, promoTicker, priceCount, priceEmpty, boardRows, boardDotsEls, boardMultetPage, priceUpdated, priceDrops, trustBadges, orders, acctStats, orderSteps,
     suggestList, showSuggest, showSuggestNav, showSuggestHero, showSuggestCatalog, suggestHeader,
     focusNav: () => { st.set({ searchFocus: 'nav' }) },
     focusHero: () => { st.set({ searchFocus: 'hero' }) },

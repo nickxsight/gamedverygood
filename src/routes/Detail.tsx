@@ -35,16 +35,20 @@ export default function Detail({ v }: { v: Vals }) {
             ))}
           </div>
 
-          <h2 style={{ fontFamily: "'Space Grotesk','IBM Plex Sans Thai'", fontWeight: 600, fontSize: 22, margin: '0 0 16px' }}>เกมที่เกี่ยวข้อง</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(140px,1fr))', gap: 14 }}>
-            {v.related.map((game: any) => (
-              <div key={game.id} onClick={game.open} style={{ cursor: 'pointer' }}>
-                <div className="gvg-poster" style={css('position:relative;aspect-ratio:2/3;border-radius:14px;overflow:hidden;border:1px solid var(--bd2,rgba(255,255,255,.18));box-shadow:0 14px 30px -18px rgba(0,0,0,.6);--pneon:' + game.c1 + '; ' + game.coverStyle)}>
-                  <div style={{ position: 'absolute', top: '-25%', right: '-18%', width: 110, height: 110, borderRadius: '50%', background: 'rgba(255,255,255,.22)', filter: 'blur(24px)', pointerEvents: 'none' }} />
-                  <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', fontFamily: "'Space Grotesk','IBM Plex Sans Thai'", fontWeight: 700, fontSize: 32, color: 'rgba(255,255,255,.94)', textShadow: '0 6px 20px rgba(0,0,0,.4)', pointerEvents: 'none', letterSpacing: '-1px' }}>{game.short}</div>
-                  <ImageSlot id={game.slotId} placeholder="วางรูปเกม" style={{ position: 'absolute', inset: 0, display: 'block', width: '100%', height: '100%', zIndex: 1 }} />
-                  <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '50%', background: 'linear-gradient(0deg,rgba(6,5,14,.92),transparent)', pointerEvents: 'none', zIndex: 2 }} />
-                  <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 3, padding: '10px 11px', fontFamily: "'Space Grotesk','IBM Plex Sans Thai'", fontWeight: 700, fontSize: 13.5, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textShadow: '0 2px 8px rgba(0,0,0,.9),0 0 20px rgba(0,0,0,.6)' }}>{game.name}</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <h2 style={{ fontFamily: "'Space Grotesk','IBM Plex Sans Thai'", fontWeight: 600, fontSize: 22, margin: 0 }}>ข่าวสารและไกด์</h2>
+            <span onClick={v.goNews} style={{ cursor: 'pointer', fontSize: 13.5, fontWeight: 500, color: 'var(--acc,#4f46e5)' }}>ดูทั้งหมด →</span>
+          </div>
+          <div data-resp="g3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 18 }}>
+            {v.homeNews.map((n: any) => (
+              <div key={n.id} onClick={n.open} style={{ cursor: 'pointer', backdropFilter: 'blur(15px) saturate(1.4)', WebkitBackdropFilter: 'blur(15px) saturate(1.4)', background: 'var(--s-card,#13151d)', border: '1px solid var(--bd,rgba(255,255,255,.09))', borderRadius: 18, overflow: 'hidden', transition: 'box-shadow .25s' }}>
+                <div style={css('position:relative;height:130px;overflow:hidden; ' + n.coverStyle)}>
+                  <ImageSlot id={n.slotId} placeholder="วางรูปข่าว" style={{ display: 'block', width: '100%', height: '100%' }} />
+                  <span style={{ position: 'absolute', left: 12, bottom: 12, zIndex: 2, padding: '4px 10px', background: 'rgba(8,9,14,.6)', backdropFilter: 'blur(6px)', border: '1px solid var(--bd2,rgba(255,255,255,.12))', borderRadius: 7, fontSize: 11, fontWeight: 600, color: '#a9b0ff' }}>{n.cat}</span>
+                </div>
+                <div style={{ padding: 14 }}>
+                  <div style={{ fontWeight: 600, fontSize: 14.5, lineHeight: 1.4, marginBottom: 8, textWrap: 'pretty' }}>{n.title}</div>
+                  <div style={{ fontSize: 12, color: 'var(--t3b,#6c727e)' }}>{n.time}</div>
                 </div>
               </div>
             ))}
