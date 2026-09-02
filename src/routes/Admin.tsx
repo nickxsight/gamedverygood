@@ -35,7 +35,7 @@ const NEWS_CATS = ['อัปเดต', 'อีสปอร์ต', 'รีว�
 
 // Upload box for one artwork slot — shows the live image (or the branded
 // gradient fallback), click to pick a file, hover to remove.
-function SlotBox({ slotId, w, h, grad, short, caption }: { slotId: string; w: number; h: number; grad: string; short: string; caption: string }) {
+function SlotBox({ slotId, w, h, grad, short, caption, fit = 'cover' }: { slotId: string; w: number; h: number; grad: string; short: string; caption: string; fit?: 'cover' | 'contain' }) {
   const ts = useStore((s) => s.serverImages[slotId])
   const uploadSlotImage = useStore((s) => s.uploadSlotImage)
   const removeSlotImage = useStore((s) => s.removeSlotImage)
@@ -52,7 +52,7 @@ function SlotBox({ slotId, w, h, grad, short, caption }: { slotId: string; w: nu
         style={{ position: 'relative', width: w, height: h, borderRadius: 12, overflow: 'hidden', cursor: 'pointer', border: '1.5px dashed ' + (ts ? 'transparent' : 'rgba(124,131,255,.45)'), background: grad, display: 'grid', placeItems: 'center', opacity: busy ? .5 : 1 }}
       >
         {ts
-          ? <img src={`/api/images/${slotId}?v=${ts}`} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+          ? <img src={`/api/images/${slotId}?v=${ts}`} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: fit, background: fit === 'contain' ? '#fff' : undefined }} />
           : <span style={{ fontFamily: "'Space Grotesk'", fontWeight: 700, fontSize: 15, color: 'rgba(255,255,255,.9)' }}>{short}</span>}
         {!ts && <span style={{ position: 'absolute', bottom: 6, left: 0, right: 0, textAlign: 'center', fontSize: 10, color: 'rgba(255,255,255,.85)' }}>+ อัปโหลด</span>}
       </div>
@@ -595,6 +595,17 @@ export default function Admin({ v }: { v: Vals }) {
             รูปที่อัปโหลดตรงนี้แสดงให้<b style={{ color: 'var(--t1,#eef0f5)' }}>ลูกค้าทุกคนเห็นทันที</b> (คลิกช่องหรือลากรูปมาวาง · ระบบย่อ/บีบอัดให้อัตโนมัติ) —
             <b style={{ color: 'var(--t1,#eef0f5)' }}> ปกเกม</b>ใช้บนการ์ดแนวตั้ง (แนะนำรูปตั้ง 2:3) ส่วน<b style={{ color: 'var(--t1,#eef0f5)' }}>แบนเนอร์</b>ใช้บนสไลด์ใหญ่หน้าแรก (แนะนำรูปนอน 16:9) ·
             อีกทางลัด: เปิดหน้าเว็บปกติแล้ว<b style={{ color: 'var(--t1,#eef0f5)' }}>ลากรูปวางบนการ์ดจริงได้เลย</b>ตอนล็อกอินเป็นแอดมิน · ใช้เฉพาะรูปที่มีสิทธิ์ใช้งานนะครับ
+          </div>
+          <div style={card}>
+            <div style={{ fontFamily: "'Space Grotesk','IBM Plex Sans Thai'", fontWeight: 600, fontSize: 16, marginBottom: 16 }}>โลโก้เว็บไซต์</div>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
+              <SlotBox slotId="logo" w={240} h={80} grad="linear-gradient(140deg,#1b2030,#2a3247)" short="LOGO" caption="โลโก้แถบเมนู" fit="contain" />
+              <div style={{ flex: 1, minWidth: 200, fontSize: 12, color: 'var(--t3,#878e9a)', lineHeight: 1.7, paddingTop: 4 }}>
+                อัปโหลดแล้วแสดงแทนโลโก้เดิมบน<b style={{ color: 'var(--t1,#eef0f5)' }}>แถบเมนูด้านบนทันที</b> ทั้งเว็บ ·
+                แนะนำไฟล์ PNG แนวนอน (พื้นโปร่งใสหรือพื้นขาวก็ได้ ระบบแสดงบนพื้นขาวเสมอเพื่อให้ชัดทั้งโหมดกลางวัน/กลางคืน) ·
+                กด <b style={{ color: '#f87171' }}>ลบ</b> เพื่อกลับไปใช้โลโก้เดิม
+              </div>
+            </div>
           </div>
           <div style={card}>
             <div style={{ fontFamily: "'Space Grotesk','IBM Plex Sans Thai'", fontWeight: 600, fontSize: 16, marginBottom: 16 }}>รูปเกม</div>

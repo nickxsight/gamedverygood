@@ -1,17 +1,29 @@
 import { css } from '../css'
 import type { Vals } from '../vals'
 import { LogoMark } from './Logo'
+import { useStore } from '../store'
 
 export default function Nav({ v }: { v: Vals }) {
+  // Admin-uploaded logo (backoffice → รูปภาพ → โลโก้เว็บไซต์) replaces the
+  // built-in mark. Shown on a white chip so dark logo text reads in both themes.
+  const logoTs = useStore((s) => s.serverImages['logo'])
   return (
     <header style={{ position: 'sticky', top: 0, zIndex: 50, backdropFilter: 'blur(15px) saturate(1.4)', WebkitBackdropFilter: 'blur(15px) saturate(1.4)', background: 'var(--s-nav,rgba(11,12,19,.82))', borderBottom: '1px solid var(--bd,rgba(255,255,255,.09))' }}>
       <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 var(--wrap-pad,28px)', height: 70, display: 'flex', alignItems: 'center', gap: 20 }}>
         <div onClick={v.goHome} style={{ display: 'flex', alignItems: 'center', gap: 11, cursor: 'pointer', flexShrink: 0 }}>
-          <LogoMark shadow />
-          <div style={{ lineHeight: 1.1 }}>
-            <div style={{ fontFamily: "'Space Grotesk','IBM Plex Sans Thai'", fontWeight: 700, fontSize: 16, letterSpacing: '-.2px', color: 'var(--t1,#eef0f5)' }}>gamedvery<span style={{ color: 'var(--acc,#4f46e5)' }}>good</span></div>
-            <div style={{ fontSize: 10, letterSpacing: '1.5px', color: 'var(--t3b,#6c727e)', marginTop: 2 }}>GAME HUB</div>
-          </div>
+          {logoTs ? (
+            <div style={{ background: '#fff', borderRadius: 12, padding: '5px 12px', display: 'grid', placeItems: 'center', boxShadow: '0 2px 10px -4px rgba(0,0,0,.35)' }}>
+              <img src={`/api/images/logo?v=${logoTs}`} alt="gamedverygood" draggable={false} style={{ display: 'block', height: 36, maxWidth: 210, objectFit: 'contain' }} />
+            </div>
+          ) : (
+            <>
+              <LogoMark shadow />
+              <div style={{ lineHeight: 1.1 }}>
+                <div style={{ fontFamily: "'Space Grotesk','IBM Plex Sans Thai'", fontWeight: 700, fontSize: 16, letterSpacing: '-.2px', color: 'var(--t1,#eef0f5)' }}>gamedvery<span style={{ color: 'var(--acc,#4f46e5)' }}>good</span></div>
+                <div style={{ fontSize: 10, letterSpacing: '1.5px', color: 'var(--t3b,#6c727e)', marginTop: 2 }}>GAME HUB</div>
+              </div>
+            </>
+          )}
         </div>
 
         <nav data-desk-nav style={{ display: 'flex', alignItems: 'center', gap: 2, marginLeft: 6 }}>
