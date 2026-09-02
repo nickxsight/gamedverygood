@@ -504,6 +504,7 @@ export function computeVals(st: Store) {
   const suggestSource = q ? games.filter((x) => matchGame(x, q)) : [...games].sort((a, b) => b.daily - a.daily)
   const suggestList = suggestSource.slice(0, 6).map((x) => ({
     key: 'sg-' + x.id, name: x.name, genre: x.genre, short: x.short, coverStyle: x.coverStyle,
+    imgSrc: s.serverImages['img-' + x.id] ? `/api/images/img-${x.id}?v=${s.serverImages['img-' + x.id]}` : null,
     fromLabel: '฿' + effFrom(x), hot: x.hot,
     pick: () => { st.openGame(x.id); st.set({ searchFocus: false, q: '' }) },
   }))

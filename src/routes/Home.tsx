@@ -102,7 +102,9 @@ export default function Home({ v }: { v: Vals }) {
               <div style={{ padding: '11px 16px', fontSize: 11, fontWeight: 600, letterSpacing: '.5px', color: 'var(--t3,#878e9a)', borderBottom: '1px solid var(--bd-soft,rgba(255,255,255,.06))' }}>{v.suggestHeader}</div>
               {v.suggestList.map((sg) => (
                 <div key={sg.key} onMouseDown={sg.pick} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 16px', cursor: 'pointer', transition: 'background .15s' }}>
-                  <div style={css('width:40px;height:40px;border-radius:9px;flex-shrink:0;display:grid;place-items:center;font-family:\'Space Grotesk\',\'IBM Plex Sans Thai\';font-weight:700;font-size:12px;color:#fff; ' + sg.coverStyle)}>{sg.short}</div>
+                  <div style={css('overflow:hidden;width:40px;height:40px;border-radius:9px;flex-shrink:0;display:grid;place-items:center;font-family:\'Space Grotesk\',\'IBM Plex Sans Thai\';font-weight:700;font-size:12px;color:#fff; ' + sg.coverStyle)}>
+                    {sg.imgSrc ? <img src={sg.imgSrc} alt="" draggable={false} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} /> : sg.short}
+                  </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--t1,#eef0f5)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sg.name}</div>
                     <div style={{ fontSize: 12, color: 'var(--t3,#878e9a)' }}>{sg.genre}</div>
