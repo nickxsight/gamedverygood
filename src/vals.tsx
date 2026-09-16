@@ -49,20 +49,18 @@ export function computeVals(st: Store) {
     }
   })
 
+  // Mobile bottom nav: topup sits in the center as the raised primary button.
   const bnDefs = [
-    { key: 'home', label: 'หน้าแรก', icon: '🏠' },
-    { key: 'topup', label: 'เติมเกม', icon: '⚡' },
-    { key: 'tools', label: 'Tools', icon: '🛠️' },
-    { key: 'news', label: 'ข่าว', icon: '📰' },
-    { key: 'history', label: 'บัญชี', icon: '👤' },
+    { key: 'home', label: 'หน้าแรก' },
+    { key: 'tools', label: 'Tools' },
+    { key: 'topup', label: 'เติมเกม' },
+    { key: 'news', label: 'ข่าว' },
+    { key: 'history', label: 'บัญชี' },
   ]
-  const bottomNav = bnDefs.map((b) => {
-    const on = s.route === b.key || (b.key === 'topup' && s.route === 'detail') || (b.key === 'history' && s.route === 'history')
-    return {
-      ...b, go: () => st.go(b.key),
-      style: { cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '3px', padding: '7px 15px', borderRadius: '15px', transition: 'all .28s cubic-bezier(.2,.7,.3,1)', color: on ? '#fff' : 'var(--t3b,#6c727e)', background: on ? 'linear-gradient(140deg,var(--acc,#4f46e5),var(--acc2,#7c83ff))' : 'transparent', boxShadow: on ? '0 10px 22px -8px var(--acc,#4f46e5)' : 'none' } as React.CSSProperties,
-    }
-  })
+  const bottomNav = bnDefs.map((b) => ({
+    ...b, go: () => st.go(b.key),
+    on: s.route === b.key || (b.key === 'topup' && s.route === 'detail'),
+  }))
 
   const ranked = [...GAMES].sort((a, b) => (DAILY[b.id] || 0) - (DAILY[a.id] || 0))
   const hotIds = new Set(ranked.slice(0, 3).map((x) => x.id))

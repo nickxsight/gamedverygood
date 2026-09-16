@@ -10,7 +10,7 @@ body { margin: 0; background: #0a0912; }
           radial-gradient(1000px 900px at 50% 116%, rgba(168,85,247,.16), transparent 62%),
           linear-gradient(165deg, #16152e 0%, #0e0d1e 52%, #0a0912 100%);
   --s-card: rgba(36,34,62,.46); --s-inset: rgba(255,255,255,.05); --s-input: rgba(255,255,255,.06);
-  --s-nav: rgba(19,18,36,.55); --s-foot: rgba(16,15,30,.5);
+  --s-nav: rgba(19,18,36,.55); --s-foot: rgba(16,15,30,.5); --s-navbar: #14161f;
   --t1:#f2f3fb; --t2:#adb2c6; --t2b:#d3d6e7; --t3:#9096ad; --t3b:#7c8099;
   --bd:rgba(255,255,255,.12); --bd2:rgba(255,255,255,.18); --bd-soft:rgba(255,255,255,.07);
   --ok:#4ade80; --neon:#a78bfa; --s-panel:rgba(20,18,36,.9);
@@ -21,7 +21,7 @@ body { margin: 0; background: #0a0912; }
           radial-gradient(900px 660px at 100% 0%, rgba(236,72,153,.14), transparent 56%),
           linear-gradient(165deg, #ecedfc 0%, #e7eaf8 54%, #eef0fb 100%);
   --s-card: rgba(255,255,255,.78); --s-inset: rgba(255,255,255,.58); --s-input: rgba(255,255,255,.7);
-  --s-nav: rgba(255,255,255,.72); --s-foot: rgba(255,255,255,.66);
+  --s-nav: rgba(255,255,255,.72); --s-foot: rgba(255,255,255,.66); --s-navbar: #ffffff;
   --t1:#181d2b; --t2:#535d70; --t2b:#333c49; --t3:#6e7787; --t3b:#8790a0;
   --bd:rgba(30,35,70,.12); --bd2:rgba(30,35,70,.18); --bd-soft:rgba(30,35,70,.055);
   --ok:#12a150; --neon:#7c3aed; --s-panel:rgba(255,255,255,.86);
