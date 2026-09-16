@@ -123,7 +123,9 @@ export default function History({ v }: { v: Vals }) {
           </div>
           {v.lookupFound && (
             <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 11, padding: 12, background: 'var(--s-inset,#161922)', borderRadius: 12 }}>
-              <div style={css('width:38px;height:38px;border-radius:10px;flex-shrink:0;display:grid;place-items:center;font-family:\'Space Grotesk\',\'IBM Plex Sans Thai\';font-weight:700;font-size:12px;color:#fff; ' + lr.coverStyle)}>{lr.short}</div>
+              <div style={css('overflow:hidden;width:38px;height:38px;border-radius:10px;flex-shrink:0;display:grid;place-items:center;font-family:\'Space Grotesk\',\'IBM Plex Sans Thai\';font-weight:700;font-size:12px;color:#fff; ' + lr.coverStyle)}>
+                {lr.imgSrc ? <img src={lr.imgSrc} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} /> : lr.short}
+              </div>
               <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 13, fontWeight: 600 }}>{lr.name}</div><div style={{ fontSize: 11.5, color: 'var(--t3,#878e9a)' }}>{lr.amount} {lr.currency} · {lr.ref}</div></div>
               <span style={{ fontSize: 12.5, fontWeight: 700, color: lr.statusColor }}>{lr.statusLabel}</span>
             </div>
@@ -141,7 +143,9 @@ export default function History({ v }: { v: Vals }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {v.orders.map((o: any) => (
           <div key={o.key} style={{ display: 'flex', alignItems: 'center', gap: 16, backdropFilter: 'blur(15px) saturate(1.4)', WebkitBackdropFilter: 'blur(15px) saturate(1.4)', background: 'var(--s-card,#13151d)', border: '1px solid var(--bd,rgba(255,255,255,.09))', borderRadius: 16, padding: '16px 18px', flexWrap: 'wrap' }}>
-            <div style={css('width:50px;height:50px;border-radius:13px;flex-shrink:0;display:grid;place-items:center;font-family:\'Space Grotesk\',\'IBM Plex Sans Thai\';font-weight:700;font-size:14px;color:#fff; ' + o.coverStyle)}>{o.short}</div>
+            <div style={css('overflow:hidden;width:50px;height:50px;border-radius:13px;flex-shrink:0;display:grid;place-items:center;font-family:\'Space Grotesk\',\'IBM Plex Sans Thai\';font-weight:700;font-size:14px;color:#fff; ' + o.coverStyle)}>
+              {o.imgSrc ? <img src={o.imgSrc} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} /> : o.short}
+            </div>
             <div style={{ flex: 1, minWidth: 140 }}>
               <div style={{ fontWeight: 600, fontSize: 15 }}>{o.name}</div>
               <div style={{ fontSize: 12.5, color: 'var(--t3b,#6c727e)' }}>{o.amount} {o.currency} · {o.time}</div>

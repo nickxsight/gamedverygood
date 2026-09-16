@@ -157,7 +157,9 @@ export default function Home({ v }: { v: Vals }) {
               <div className="gvg-scroll" style={{ display: 'flex', gap: 14, overflowX: 'auto', padding: '4px 4px 12px' }}>
                 {v.recentOrders.map((r: any) => (
                   <div key={r.key} onClick={r.reorder} style={{ cursor: 'pointer', flex: '0 0 auto', display: 'flex', alignItems: 'center', gap: 12, width: 242, padding: 14, backdropFilter: 'blur(15px) saturate(1.4)', WebkitBackdropFilter: 'blur(15px) saturate(1.4)', background: 'var(--s-card,#13151d)', border: '1px solid var(--bd,rgba(255,255,255,.09))', borderRadius: 15, transition: 'border-color .2s' }}>
-                    <div style={css('width:46px;height:46px;border-radius:12px;flex-shrink:0;display:grid;place-items:center;font-family:\'Space Grotesk\',\'IBM Plex Sans Thai\';font-weight:700;font-size:13px;color:#fff; ' + r.coverStyle)}>{r.short}</div>
+                    <div style={css('overflow:hidden;width:46px;height:46px;border-radius:12px;flex-shrink:0;display:grid;place-items:center;font-family:\'Space Grotesk\',\'IBM Plex Sans Thai\';font-weight:700;font-size:13px;color:#fff; ' + r.coverStyle)}>
+                      {r.imgSrc ? <img src={r.imgSrc} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} /> : r.short}
+                    </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.name}</div>
                       <div style={{ fontSize: 11.5, color: 'var(--t3,#878e9a)' }}>{r.sub}</div>

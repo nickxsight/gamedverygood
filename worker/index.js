@@ -786,6 +786,21 @@ async function handleAccount(request, env, path) {
     return json({ code, ...d })
   }
 
+  // Public order lookup by reference number (guest "เช็คสถานะ" box).
+  // Refs are unguessable enough at this rate limit; the reply is minimal.
+  if (path === '/api/orders/lookup' && request.method === 'POST') {
+    if (!await rateLimit(db, request, 'lookup', 30, 600000)) return tooMany()
+    const b = await readBody(request)
+    let ref = String((b && b.ref) || '').trim().toUpperCase().slice(0, 30)
+    if (!ref) return json({ message: 'กรอกเลขออเดอร์ก่อน' }, 400)
+    if (!ref.startsWith('#')) ref = '#' + ref
+    const row = await db.prepare(
+      'SELECT gid, amount, price, status, ref, created_at FROM orders WHERE ref = ? ORDER BY id DESC LIMIT 1',
+    ).bind(ref).first()
+    if (!row) return json({ order: null })
+    return json({ order: { gid: row.gid, amount: row.amount || '', price: row.price, status: row.status, ref: row.ref, createdAt: row.created_at } })
+  }
+
   // Everything below requires a session.
   const user = await currentUser(db, request)
   if (path === '/api/me' && request.method === 'GET') {
@@ -1109,7 +1124,7 @@ export default {
       }
     }
 
-    if (path.startsWith('/api/auth/') || path === '/api/me' || path.startsWith('/api/me/') || path === '/api/orders' || path === '/api/coupons/validate') {
+    if (path.startsWith('/api/auth/') || path === '/api/me' || path.startsWith('/api/me/') || path === '/api/orders' || path === '/api/orders/lookup' || path === '/api/coupons/validate') {
       try {
         return await handleAccount(request, env, path)
       } catch (err) {

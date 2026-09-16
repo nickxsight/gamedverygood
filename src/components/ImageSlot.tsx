@@ -18,6 +18,7 @@ export default function ImageSlot({ id, placeholder = 'วางรูป', radi
   const isAdmin = useStore((s) => s.isAdmin)
   const uploadSlotImage = useStore((s) => s.uploadSlotImage)
   const [over, setOver] = useState(false)
+  const [loaded, setLoaded] = useState(false)
   const depth = useRef(0)
 
   const br = radius != null ? `${radius}px` : (style as CSSProperties)?.borderRadius
@@ -41,8 +42,14 @@ export default function ImageSlot({ id, placeholder = 'วางรูป', radi
           src={src}
           alt=""
           draggable={false}
-          style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover', borderRadius: br }}
+          ref={(el) => { if (el && el.complete && el.naturalWidth > 0 && !loaded) setLoaded(true) }}
+          onLoad={() => setLoaded(true)}
+          style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover', borderRadius: br, opacity: loaded ? 1 : 0, transition: 'opacity .35s ease' }}
         />
+      )}
+      {/* shimmer skeleton while the image is on its way */}
+      {src && !loaded && (
+        <div className="gvg-skel" aria-hidden="true" style={{ position: 'absolute', inset: 0, borderRadius: br }} />
       )}
       {over && (
         <div style={{ position: 'absolute', inset: 0, borderRadius: br, outline: '2px solid #c96442', outlineOffset: -2, background: 'rgba(201,100,66,.15)', pointerEvents: 'none', zIndex: 5 }} />

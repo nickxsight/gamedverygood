@@ -62,7 +62,9 @@ export default function Chat({ v }: { v: Vals }) {
                   {m.isOrder && (
                     <div style={{ width: 252, backdropFilter: 'blur(15px) saturate(1.4)', WebkitBackdropFilter: 'blur(15px) saturate(1.4)', background: 'var(--s-card,#13151d)', border: '1px solid var(--bd,rgba(255,255,255,.1))', borderRadius: 14, padding: 13 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 11 }}>
-                        <div style={css('width:40px;height:40px;border-radius:10px;display:grid;place-items:center;font-family:\'Space Grotesk\',\'IBM Plex Sans Thai\';font-weight:700;font-size:12px;color:#fff;flex-shrink:0;' + m.order.coverStyle)}>{m.order.short}</div>
+                        <div style={css('overflow:hidden;width:40px;height:40px;border-radius:10px;display:grid;place-items:center;font-family:\'Space Grotesk\',\'IBM Plex Sans Thai\';font-weight:700;font-size:12px;color:#fff;flex-shrink:0;' + m.order.coverStyle)}>
+                          {m.order.imgSrc ? <img src={m.order.imgSrc} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} /> : m.order.short}
+                        </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1,#eef0f5)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.order.name}</div>
                           <div style={{ fontSize: 11.5, color: 'var(--t3,#878e9a)' }}>{m.order.pkgLabel}</div>
@@ -82,7 +84,9 @@ export default function Chat({ v }: { v: Vals }) {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: 252 }}>
                       {m.cardList.map((c: any, ci: number) => (
                         <div key={ci} onClick={c.go} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 11, backdropFilter: 'blur(15px) saturate(1.4)', WebkitBackdropFilter: 'blur(15px) saturate(1.4)', background: 'var(--s-card,#13151d)', border: '1px solid var(--bd,rgba(255,255,255,.1))', borderRadius: 12, padding: '9px 11px', transition: 'border-color .15s' }}>
-                          <div style={css('width:38px;height:38px;border-radius:9px;display:grid;place-items:center;font-family:\'Space Grotesk\',\'IBM Plex Sans Thai\';font-weight:700;font-size:11px;color:#fff;flex-shrink:0;' + c.coverStyle)}>{c.short}</div>
+                          <div style={css('overflow:hidden;width:38px;height:38px;border-radius:9px;display:grid;place-items:center;font-family:\'Space Grotesk\',\'IBM Plex Sans Thai\';font-weight:700;font-size:11px;color:#fff;flex-shrink:0;' + c.coverStyle)}>
+                            {c.imgSrc ? <img src={c.imgSrc} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} /> : c.short}
+                          </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--t1,#eef0f5)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.name}</div>
                             <div style={{ fontSize: 11, color: 'var(--t3,#878e9a)' }}>เริ่ม {c.fromLabel}</div>

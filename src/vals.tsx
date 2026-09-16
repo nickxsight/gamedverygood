@@ -23,9 +23,14 @@ export function computeVals(st: Store) {
   // Shadows the static import so every lookup below uses the live list.
   const GAMES = mergedGames(s.customGames, s.hiddenGames)
 
+  // Admin-uploaded cover for a game, or null (callers fall back to the chip).
+  const imgFor = (gid: string) =>
+    s.serverImages['img-' + gid] ? `/api/images/img-${gid}?v=${s.serverImages['img-' + gid]}` : null
+
   const g: any = { ...(GAMES.find((x) => x.id === s.game) || GAMES[0]) }
   g.coverStyle = cover(g.c1, g.c2)
   g.slotId = 'img-' + g.id
+  g.imgSrc = imgFor(g.id)
   // Packages: admin-managed per game (pkgMap) with the built-in set as fallback.
   const pkgsFor = (gid: string) => (s.pkgMap[gid] && s.pkgMap[gid].length ? s.pkgMap[gid] : PKGS)
   const findPkg = (gid: string, pid: string) =>
@@ -286,7 +291,7 @@ export function computeVals(st: Store) {
   const gamePicker = gamePickerFull.map((x) => {
     const sel = x.id === s.game
     return {
-      ...x, coverStyle: cover(x.c1, x.c2), pick: () => st.set({ game: x.id, payStatus: 'idle' }),
+      ...x, coverStyle: cover(x.c1, x.c2), imgSrc: imgFor(x.id), pick: () => st.set({ game: x.id, payStatus: 'idle' }),
       chipStyle: `cursor:pointer;flex-shrink:0;width:108px;text-align:center;padding:14px 8px;border-radius:16px;transition:all .2s;background:${sel ? 'rgba(124,131,255,.16)' : 'var(--s-card,#13151d)'};border:1.5px solid ${sel ? 'var(--acc,#4f46e5)' : 'var(--bd2,rgba(255,255,255,.12))'};`,
     }
   })
@@ -322,7 +327,7 @@ export function computeVals(st: Store) {
     const og = GAMES.find((x) => x.id === o.gid) || GAMES[0]
     const op = findPkg(o.gid, o.pkg)
     return {
-      key: 'ro' + i + o.ref, short: og.short, name: og.name, coverStyle: cover(og.c1, og.c2),
+      key: 'ro' + i + o.ref, short: og.short, name: og.name, coverStyle: cover(og.c1, og.c2), imgSrc: imgFor(o.gid),
       sub: (o.amount || op?.amount || '') + ' ' + og.currency, reorder: () => st.reorder(o.gid, o.pkg),
     }
   })
@@ -454,7 +459,7 @@ export function computeVals(st: Store) {
     const op = findPkg(o.gid, o.pkg)
     const stt = statusMap[o.status] || statusMap.success
     return {
-      key: 'o' + i + o.ref, short: og.short, name: og.name, currency: og.currency, coverStyle: cover(og.c1, og.c2),
+      key: 'o' + i + o.ref, short: og.short, name: og.name, currency: og.currency, coverStyle: cover(og.c1, og.c2), imgSrc: imgFor(o.gid),
       amount: o.amount || op?.amount || '—', price: o.price ?? op?.price ?? 0, time: o.time, ref: o.ref, statusLabel: stt.label, badgeStyle: stt.style,
       reorder: () => st.reorder(o.gid, o.pkg),
     }
@@ -512,15 +517,30 @@ export function computeVals(st: Store) {
   const lookupResult = (() => {
     if (!s.lookupDone) return null
     const ref = (s.lookupRef || '').trim().toUpperCase().replace(/^#/, '')
-    const found = st.orders().find((o) => o.ref.toUpperCase().replace(/^#/, '') === ref || o.ref.toUpperCase().includes(ref))
     if (!ref) return null
+    const stMap: Record<string, string> = { success: 'สำเร็จ ✓', pending: 'กำลังดำเนินการ', failed: 'ไม่สำเร็จ' }
+    const stColor: Record<string, string> = { success: 'var(--ok,#4ade80)', pending: '#fb923c', failed: '#f87171' }
+    // Server-verified result (works for guests and across devices).
+    const sv: any = s.lookupServer
+    if (sv && sv.gid) {
+      const og = GAMES.find((x) => x.id === sv.gid) || GAMES[0]
+      const d = new Date(String(sv.createdAt || '').replace(' ', 'T') + 'Z')
+      return {
+        ok: true, name: og.name, short: og.short, coverStyle: cover(og.c1, og.c2), imgSrc: imgFor(og.id),
+        amount: sv.amount || '—', currency: og.currency, ref: sv.ref,
+        time: isNaN(d.getTime()) ? '' : d.toLocaleString('th-TH', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }),
+        statusLabel: stMap[sv.status] || sv.status, statusColor: stColor[sv.status] || 'var(--t2,#9aa1ad)',
+      } as const
+    }
+    if (s.lookupBusy) return null
+    if (sv === 'miss') return { ok: false } as const
+    // Offline fallback: search the orders already loaded on this device.
+    const found = st.orders().find((o) => o.ref.toUpperCase().replace(/^#/, '') === ref || o.ref.toUpperCase().includes(ref))
     if (!found) return { ok: false } as const
     const og = GAMES.find((x) => x.id === found.gid) || GAMES[0]
     const op = findPkg(found.gid, found.pkg)
-    const stMap: Record<string, string> = { success: 'สำเร็จ ✓', pending: 'กำลังดำเนินการ', failed: 'ไม่สำเร็จ' }
-    const stColor: Record<string, string> = { success: 'var(--ok,#4ade80)', pending: '#fb923c', failed: '#f87171' }
     return {
-      ok: true, name: og.name, short: og.short, coverStyle: cover(og.c1, og.c2),
+      ok: true, name: og.name, short: og.short, coverStyle: cover(og.c1, og.c2), imgSrc: imgFor(og.id),
       amount: found.amount || op?.amount || '—', currency: og.currency, ref: found.ref, time: found.time,
       statusLabel: stMap[found.status], statusColor: stColor[found.status],
     } as const
@@ -619,7 +639,7 @@ export function computeVals(st: Store) {
     const op = findPkg(o.gid, o.pkg)
     const stt = chatStat[o.status] || chatStat.pending
     return {
-      coverStyle: cover(og.c1, og.c2), short: og.short, name: og.name, pkgLabel: (o.amount || op?.amount || '—') + ' ' + og.currency, ref: o.ref, time: o.time, statusLabel: stt.l,
+      coverStyle: cover(og.c1, og.c2), imgSrc: imgFor(o.gid), short: og.short, name: og.name, pkgLabel: (o.amount || op?.amount || '—') + ' ' + og.currency, ref: o.ref, time: o.time, statusLabel: stt.l,
       statusStyle: `display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:7px;font-size:11px;font-weight:600;background:${stt.c}22;color:${stt.c};`,
       go: () => { st.go('history'); st.set({ chatOpen: false }) },
       reorder: () => { st.reorder(o.gid, o.pkg); st.set({ chatOpen: false }) },
@@ -639,7 +659,7 @@ export function computeVals(st: Store) {
       timeStyle: `font-size:10px;color:var(--t3b,#5a6170);margin-top:4px;padding:0 4px;`,
     }
     if (m.kind === 'order') row.order = buildOrderCard(m.order)
-    if (m.kind === 'cards') row.cardList = (m.cards || []).map((gid: string) => { const gg = GAMES.find((x) => x.id === gid) || GAMES[0]; return { coverStyle: cover(gg.c1, gg.c2), short: gg.short, name: gg.name, fromLabel: '฿' + effFrom(gg), go: () => { st.reorder(gid, 'p3'); st.set({ chatOpen: false }) } } })
+    if (m.kind === 'cards') row.cardList = (m.cards || []).map((gid: string) => { const gg = GAMES.find((x) => x.id === gid) || GAMES[0]; return { coverStyle: cover(gg.c1, gg.c2), imgSrc: imgFor(gg.id), short: gg.short, name: gg.name, fromLabel: '฿' + effFrom(gg), go: () => { st.reorder(gid, 'p3'); st.set({ chatOpen: false }) } } })
     return row
   })
   const chatQuick = [

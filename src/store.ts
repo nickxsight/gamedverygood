@@ -23,7 +23,9 @@ export type State = {
   loggedIn: boolean; showLogin: boolean; favorites: Record<string, boolean>
   couponInput: string; coupon: { code: string; type: 'pct' | 'fixed'; value: number; label: string } | null; couponError: string
   checkedDays: number; claimedToday: boolean; redeemCredit: number; redeemedPts: number
-  refCopied: boolean; lookupRef: string; lookupDone: boolean; article: string; toolModal: string | null
+  refCopied: boolean; lookupRef: string; lookupDone: boolean; lookupBusy: boolean
+  lookupServer: Record<string, unknown> | 'miss' | null
+  article: string; toolModal: string | null
   tSens: string; tDpi: string; tBudget: string; now: number; theme: 'day' | 'night'
   chatOpen: boolean; chatInput: string; chatTyping: boolean; chatPendingImg: string | null
   chatUnread: number; liveCount: number; toast: Toast | null; chatLog: ChatMsg[]
@@ -53,7 +55,7 @@ type Actions = {
   claimCheckin: () => void
   redeemPoints: (cost: number, credit: number) => void
   copyRef: (code: string) => void
-  doLookup: () => void
+  doLookup: () => Promise<void>
   openArticle: (id: string) => void
   openTool: (id: string) => void
   closeTool: () => void
@@ -270,7 +272,7 @@ export const useStore = create<Store>((set, get) => {
     active: {}, pbFilter: 'all', boardPage: 0, myOrders: null, searchFocus: false,
     catCat: 'all', catPlatform: 'all', catSort: 'popular',
     loggedIn: false, showLogin: false, favorites: { freefire: true, ro3: true }, couponInput: '', coupon: null, couponError: '',
-    checkedDays: 3, claimedToday: false, redeemCredit: 0, redeemedPts: 0, refCopied: false, lookupRef: '', lookupDone: false, article: 'n1', toolModal: null,
+    checkedDays: 3, claimedToday: false, redeemCredit: 0, redeemedPts: 0, refCopied: false, lookupRef: '', lookupDone: false, lookupBusy: false, lookupServer: null, article: 'n1', toolModal: null,
     tSens: '0.45', tDpi: '800', tBudget: '2000', now: Date.now(), theme: 'night',
     chatOpen: false, chatInput: '', chatTyping: false, chatPendingImg: null, chatUnread: 1, liveCount: 1287, toast: null,
     saleEnd: Date.now() + 3 * 3600 * 1000 + 47 * 60 * 1000,
@@ -363,7 +365,15 @@ export const useStore = create<Store>((set, get) => {
       set((s) => { if ((1250 + s.checkedDays * 20 - s.redeemedPts) < cost) return {}; return { redeemCredit: s.redeemCredit + credit, redeemedPts: s.redeemedPts + cost } })
     },
     copyRef: (code) => { try { navigator.clipboard?.writeText(code) } catch { /* */ } set({ refCopied: true }); setTimeout(() => set({ refCopied: false }), 1800) },
-    doLookup: () => set({ lookupDone: true }),
+    // Guest order lookup — verified against the server, any device.
+    doLookup: async () => {
+      const ref = (get().lookupRef || '').trim()
+      if (!ref) return
+      set({ lookupDone: true, lookupBusy: true, lookupServer: null })
+      const r = await api('/api/orders/lookup', { ref })
+      if (r.ok && r.data) set({ lookupServer: r.data.order || 'miss', lookupBusy: false })
+      else set({ lookupServer: r.status === 0 ? null : 'miss', lookupBusy: false })
+    },
     openArticle: (id) => { set({ article: id, route: 'article' }); scrollTop() },
     openTool: (id) => set({ toolModal: id }),
     closeTool: () => set({ toolModal: null }),

@@ -105,3 +105,12 @@ body { margin: 0; background: #0a0912; }
     transition: none !important;
   }
 }
+
+/* Shimmer skeleton shown while a server image loads. */
+.gvg-skel {
+  background: linear-gradient(100deg, rgba(255,255,255,0) 30%, rgba(255,255,255,.09) 50%, rgba(255,255,255,0) 70%), var(--s-inset,#161922);
+  background-size: 220% 100%, auto;
+  animation: gvgSkel 1.3s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes gvgSkel { from { background-position: 130% 0, 0 0; } to { background-position: -90% 0, 0 0; } }

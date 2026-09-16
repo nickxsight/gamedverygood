@@ -11,7 +11,9 @@ export default function Detail({ v }: { v: Vals }) {
         <ImageSlot id={g.slotId} placeholder="วางรูปแบนเนอร์เกม" style={{ position: 'absolute', inset: 0, display: 'block', width: '100%', height: '100%' }} />
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(110deg,rgba(0,0,0,.85) 25%,transparent 90%)' }} />
         <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-end', gap: 24, flexWrap: 'wrap' }}>
-          <div style={css('width:96px;height:96px;border-radius:22px;display:grid;place-items:center;font-family:\'Space Grotesk\',\'IBM Plex Sans Thai\';font-weight:700;font-size:28px;color:#fff;box-shadow:0 16px 40px -12px rgba(0,0,0,.4); ' + g.coverStyle)}>{g.short}</div>
+          <div style={css('overflow:hidden;width:96px;height:96px;border-radius:22px;display:grid;place-items:center;font-family:\'Space Grotesk\',\'IBM Plex Sans Thai\';font-weight:700;font-size:28px;color:#fff;box-shadow:0 16px 40px -12px rgba(0,0,0,.4); ' + g.coverStyle)}>
+            {g.imgSrc ? <img src={g.imgSrc} alt={g.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} /> : g.short}
+          </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
               <span style={{ padding: '4px 11px', background: 'rgba(255,255,255,.18)', borderRadius: 8, fontSize: 12, color: '#fff' }}>{g.genre}</span>

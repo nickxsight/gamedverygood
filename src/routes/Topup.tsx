@@ -38,7 +38,9 @@ export default function Topup({ v }: { v: Vals }) {
         <div className="gvg-scroll" style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8 }}>
           {v.gamePicker.map((game: any) => (
             <div key={game.id} onClick={game.pick} style={css(game.chipStyle)}>
-              <div style={css('width:46px;height:46px;border-radius:12px;display:grid;place-items:center;font-family:\'Space Grotesk\',\'IBM Plex Sans Thai\';font-weight:700;font-size:14px;color:#fff;margin-bottom:9px; ' + game.coverStyle)}>{game.short}</div>
+              <div style={css('overflow:hidden;width:46px;height:46px;border-radius:12px;display:grid;place-items:center;font-family:\'Space Grotesk\',\'IBM Plex Sans Thai\';font-weight:700;font-size:14px;color:#fff;margin:0 auto 9px; ' + game.coverStyle)}>
+                {game.imgSrc ? <img src={game.imgSrc} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} /> : game.short}
+              </div>
               <div style={{ fontSize: 12.5, fontWeight: 500, whiteSpace: 'nowrap' }}>{game.name}</div>
             </div>
           ))}
@@ -91,7 +93,9 @@ export default function Topup({ v }: { v: Vals }) {
         <div style={{ position: 'sticky', top: 88, backdropFilter: 'blur(15px) saturate(1.4)', WebkitBackdropFilter: 'blur(15px) saturate(1.4)', background: 'var(--s-card,#13151d)', border: '1px solid var(--bd,rgba(255,255,255,.09))', borderRadius: 20, padding: 24, boxShadow: '0 16px 44px -24px rgba(0,0,0,.18)' }}>
           <div style={{ fontFamily: "'Space Grotesk','IBM Plex Sans Thai'", fontWeight: 600, fontSize: 16, marginBottom: 20 }}>สรุปคำสั่งซื้อ</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingBottom: 18, borderBottom: '1px solid var(--bd,rgba(255,255,255,.09))', marginBottom: 18 }}>
-            <div style={css('width:48px;height:48px;border-radius:12px;display:grid;place-items:center;font-family:\'Space Grotesk\',\'IBM Plex Sans Thai\';font-weight:700;font-size:14px;color:#fff; ' + g.coverStyle)}>{g.short}</div>
+            <div style={css('overflow:hidden;width:48px;height:48px;border-radius:12px;display:grid;place-items:center;font-family:\'Space Grotesk\',\'IBM Plex Sans Thai\';font-weight:700;font-size:14px;color:#fff; ' + g.coverStyle)}>
+              {g.imgSrc ? <img src={g.imgSrc} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} /> : g.short}
+            </div>
             <div><div style={{ fontWeight: 600, fontSize: 14.5 }}>{g.name}</div><div style={{ fontSize: 12, color: 'var(--t3b,#6c727e)' }}>{g.genre}</div></div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 11, fontSize: 13.5, marginBottom: 18 }}>
