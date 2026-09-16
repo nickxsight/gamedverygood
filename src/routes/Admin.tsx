@@ -84,7 +84,7 @@ export default function Admin({ v }: { v: Vals }) {
   const gamesAll = mergedGames(customGames, hiddenGames)
   const findGame = (id: string) => gamesAll.find((x) => x.id === id) || GAMES.find((x) => x.id === id)
 
-  const [tab, setTab] = useState<'overview' | 'orders' | 'users' | 'games' | 'pkgs' | 'coupons' | 'news' | 'images' | 'site'>('overview')
+  const [tab, setTab] = useState<'overview' | 'orders' | 'users' | 'games' | 'pkgs' | 'coupons' | 'news' | 'images' | 'site' | 'finance'>('overview')
   const [overview, setOverview] = useState<any>(null)
 
   // orders
@@ -108,6 +108,16 @@ export default function Admin({ v }: { v: Vals }) {
   const [gForm, setGForm] = useState<any | null>(null)
   // site
   const [tickerText, setTickerText] = useState('')
+  // finance (accounting dates follow Thai local time, same as the exports)
+  const nowTH = new Date(Date.now() + 7 * 3600 * 1000)
+  const curYearTH = String(nowTH.getUTCFullYear())
+  const todayTH = nowTH.toISOString().slice(0, 10)
+  const [finYear, setFinYear] = useState(curYearTH)
+  const [fin, setFin] = useState<any>(null)
+  const [expMonth, setExpMonth] = useState(todayTH.slice(0, 7))
+  const [expList, setExpList] = useState<any[]>([])
+  const [expForm, setExpForm] = useState({ date: todayTH, category: 'cost', amount: '', note: '' })
+  const [profileF, setProfileF] = useState({ name: '', taxId: '', address: '' })
 
   const custom = !!(pkgMap[gid] && pkgMap[gid].length)
   useEffect(() => {
@@ -120,6 +130,14 @@ export default function Admin({ v }: { v: Vals }) {
   const loadUsers = (q = usrQ) =>
     call(`/api/admin/users?q=${encodeURIComponent(q)}`).then((r) => { if (r.ok) setUsrList(r.data.users || []) })
   const loadCoupons = () => call('/api/admin/coupons').then((r) => { if (r.ok) setCoupons(r.data.coupons || []) })
+  const loadFin = (y = finYear) => call('/api/admin/finance/summary?year=' + y).then((r) => {
+    if (r.ok) {
+      setFin(r.data)
+      const p = r.data.profile || {}
+      setProfileF({ name: p.name || '', taxId: p.taxId || '', address: p.address || '' })
+    }
+  })
+  const loadExpenses = (m = expMonth) => call('/api/admin/finance/expenses?month=' + m).then((r) => { if (r.ok) setExpList(r.data.expenses || []) })
   const loadArticles = () => call('/api/admin/articles').then((r) => { if (r.ok) setArticles(r.data.articles || []) })
 
   useEffect(() => {
@@ -129,6 +147,33 @@ export default function Admin({ v }: { v: Vals }) {
     setTickerText((siteTicker && siteTicker.length ? siteTicker : DEFAULT_TICKER).join('\n'))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [v.isAdmin])
+
+  // Lazy-load the finance tab the first time it opens.
+  useEffect(() => {
+    if (v.isAdmin && tab === 'finance' && !fin) { loadFin(); loadExpenses() }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, v.isAdmin])
+
+  const addExpense = async () => {
+    const amount = Number(expForm.amount)
+    if (!expForm.date || !Number.isFinite(amount) || amount <= 0) { showToast('กรอกวันที่และจำนวนเงินให้ถูกต้อง', '⚠️'); return }
+    const r = await call('/api/admin/finance/expenses', 'POST', { ...expForm, amount })
+    if (r.ok) {
+      showToast('บันทึกรายจ่ายแล้ว', '🧾')
+      setExpForm({ date: expForm.date, category: expForm.category, amount: '', note: '' })
+      loadExpenses(); loadFin()
+    } else showToast(r.data.message || 'บันทึกไม่สำเร็จ', '⚠️')
+  }
+  const delExpense = async (id: number) => {
+    if (!window.confirm('ลบรายจ่ายนี้? (ใบเสร็จที่แนบจะถูกลบด้วย)')) return
+    const r = await call('/api/admin/finance/expenses/' + id, 'DELETE')
+    if (r.ok) { showToast('ลบรายจ่ายแล้ว', '🗑️'); loadExpenses(); loadFin() }
+  }
+  const saveProfile = async () => {
+    const r = await call('/api/admin/settings/bizprofile', 'PUT', profileF)
+    if (r.ok) showToast('บันทึกข้อมูลผู้ประกอบการแล้ว', '✓')
+    else showToast('บันทึกไม่สำเร็จ', '⚠️')
+  }
 
   if (!v.isMember || !v.isAdmin) {
     return (
@@ -252,6 +297,7 @@ export default function Admin({ v }: { v: Vals }) {
         {tabBtn('news', '📰 ข่าว & บทความ')}
         {tabBtn('images', '🖼️ รูปภาพ')}
         {tabBtn('site', '📣 แถบประกาศ')}
+        {tabBtn('finance', '💼 บัญชี & ภาษี')}
       </div>
 
       {/* ===== OVERVIEW ===== */}
@@ -639,6 +685,134 @@ export default function Admin({ v }: { v: Vals }) {
           </div>
         </div>
       )}
+
+      {/* ===== FINANCE / TAX ===== */}
+      {tab === 'finance' && (() => {
+        const TH_M = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
+        const CATS: Record<string, string> = { cost: 'ต้นทุนซื้อเครดิตเกม', fee: 'ค่าธรรมเนียมชำระเงิน', ads: 'ค่าโฆษณา/การตลาด', system: 'ค่าบริการระบบ/โดเมน', other: 'อื่นๆ' }
+        const fmtB = (n: number) => '฿' + (n || 0).toLocaleString('th-TH', { maximumFractionDigits: 2 })
+        const VAT_CAP = 1800000
+        const ytdRev = fin?.ytdRevenue || 0
+        const vatPct = Math.min(100, ytdRev / VAT_CAP * 100)
+        const vatColor = vatPct >= 100 ? '#f87171' : vatPct >= 80 ? '#fb923c' : 'var(--ok,#4ade80)'
+        const profit = ytdRev - (fin?.ytdExpense || 0)
+        const years = [curYearTH, String(Number(curYearTH) - 1), String(Number(curYearTH) - 2)]
+        const stat = (t: string, val: string, color?: string) => (
+          <div style={{ flex: 1, minWidth: 150, padding: '14px 16px', background: 'var(--s-inset,#161922)', borderRadius: 13 }}>
+            <div style={{ fontSize: 11.5, color: 'var(--t3,#878e9a)', marginBottom: 5 }}>{t}</div>
+            <div style={{ fontFamily: "'Space Grotesk','IBM Plex Sans Thai'", fontWeight: 700, fontSize: 20, color: color || 'var(--t1,#eef0f5)' }}>{val}</div>
+          </div>
+        )
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+            <div style={card}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+                <div style={{ fontFamily: "'Space Grotesk','IBM Plex Sans Thai'", fontWeight: 600, fontSize: 16 }}>สรุปปีภาษี {Number(finYear) + 543}</div>
+                <select value={finYear} onChange={(e) => { setFinYear(e.target.value); setFin(null); call('/api/admin/finance/summary?year=' + e.target.value).then((r) => { if (r.ok) setFin(r.data) }) }} style={{ ...inputS, width: 130 }}>
+                  {years.map((y) => <option key={y} value={y}>พ.ศ. {Number(y) + 543}</option>)}
+                </select>
+              </div>
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+                {stat('รายรับ (ออเดอร์สำเร็จ)', fmtB(ytdRev))}
+                {stat('รายจ่ายที่บันทึก', fmtB(fin?.ytdExpense || 0))}
+                {stat('กำไรขั้นต้น', fmtB(profit), profit >= 0 ? 'var(--ok,#4ade80)' : '#f87171')}
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--t3,#878e9a)', marginBottom: 7 }}>
+                ยอดขายสะสมเทียบเพดานจด VAT (฿1.8 ล้าน/ปี) — <b style={{ color: vatColor }}>{vatPct.toFixed(1)}%</b>
+                {vatPct >= 80 && vatPct < 100 && <b style={{ color: '#fb923c' }}> · ใกล้ถึงเกณฑ์ ควรปรึกษานักบัญชีเรื่องจด VAT ล่วงหน้า</b>}
+                {vatPct >= 100 && <b style={{ color: '#f87171' }}> · ถึงเกณฑ์ต้องจดทะเบียน VAT ภายใน 30 วัน</b>}
+              </div>
+              <div style={{ height: 10, borderRadius: 99, background: 'var(--s-inset,#161922)', overflow: 'hidden' }}>
+                <div style={{ width: vatPct + '%', height: '100%', borderRadius: 99, background: vatColor, transition: 'width .4s' }} />
+              </div>
+            </div>
+
+            <div style={card}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 6 }}>
+                <div style={{ fontFamily: "'Space Grotesk','IBM Plex Sans Thai'", fontWeight: 600, fontSize: 16 }}>รายเดือน</div>
+                <a href={`/api/admin/export/cashbook.csv?year=${finYear}`} style={{ ...btnGhost, textDecoration: 'none' }}>⬇ สมุดเงินสดทั้งปี</a>
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--t3b,#6c727e)', marginBottom: 14 }}>
+                ส่งให้ฝ่ายบัญชี 2 ไฟล์ต่อเดือน: <b style={{ color: 'var(--t1,#eef0f5)' }}>สมุดเงินสด</b> (ยอดรวมรายวัน ตามฟอร์มรายงานเงินสดรับ-จ่ายของสรรพากร) และ <b style={{ color: 'var(--t1,#eef0f5)' }}>ออเดอร์</b> (รายละเอียดทุกรายการ) — สองไฟล์นี้ยอดตรงกันเสมอ ใช้จับชนยอดได้ทันที
+              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                  <thead><tr style={{ textAlign: 'right', color: 'var(--t3,#878e9a)', fontSize: 11.5 }}>
+                    <th style={{ textAlign: 'left', padding: '8px 10px' }}>เดือน</th><th>ออเดอร์</th><th>รายรับ</th><th>รายจ่าย</th><th>กำไร</th><th style={{ textAlign: 'center' }}>ดาวน์โหลด</th>
+                  </tr></thead>
+                  <tbody>
+                    {(fin?.months || []).map((m: any, i: number) => {
+                      const mm = String(i + 1).padStart(2, '0')
+                      const pf = m.revenue - m.expense
+                      return (
+                        <tr key={i} style={{ borderTop: '1px solid var(--bd-soft,rgba(255,255,255,.06))', textAlign: 'right' }}>
+                          <td style={{ textAlign: 'left', padding: '9px 10px', fontWeight: 600 }}>{TH_M[i]}</td>
+                          <td style={{ padding: '9px 10px' }}>{m.orders || '—'}</td>
+                          <td style={{ padding: '9px 10px' }}>{m.revenue ? fmtB(m.revenue) : '—'}</td>
+                          <td style={{ padding: '9px 10px' }}>{m.expense ? fmtB(m.expense) : '—'}</td>
+                          <td style={{ padding: '9px 10px', color: pf > 0 ? 'var(--ok,#4ade80)' : pf < 0 ? '#f87171' : undefined }}>{(m.revenue || m.expense) ? fmtB(pf) : '—'}</td>
+                          <td style={{ padding: '9px 10px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                            <a href={`/api/admin/export/cashbook.csv?year=${finYear}&month=${mm}`} style={{ color: 'var(--acc,#4f46e5)', fontWeight: 600, fontSize: 12, textDecoration: 'none' }}>สมุดเงินสด</a>
+                            <span style={{ color: 'var(--t3b,#6c727e)', margin: '0 6px' }}>·</span>
+                            <a href={`/api/admin/export/orders.csv?month=${finYear}-${mm}`} style={{ color: 'var(--acc,#4f46e5)', fontWeight: 600, fontSize: 12, textDecoration: 'none' }}>ออเดอร์</a>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div style={card}>
+              <div style={{ fontFamily: "'Space Grotesk','IBM Plex Sans Thai'", fontWeight: 600, fontSize: 16, marginBottom: 4 }}>บันทึกรายจ่าย</div>
+              <div style={{ fontSize: 12, color: 'var(--t3b,#6c727e)', marginBottom: 14 }}>คีย์ทุกครั้งที่มีจ่ายจริง (ซื้อเครดิตเกม ค่าธรรมเนียม ค่าโฆษณา) พร้อมแนบรูปใบเสร็จ — สรรพากรขอดูย้อนหลังได้ 5 ปี</div>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: 18 }}>
+                <div style={{ width: 150 }}>{label('วันที่จ่าย')}<input type="date" value={expForm.date} onChange={(e) => setExpForm({ ...expForm, date: e.target.value })} style={inputS} /></div>
+                <div style={{ width: 190 }}>{label('หมวด')}
+                  <select value={expForm.category} onChange={(e) => setExpForm({ ...expForm, category: e.target.value })} style={inputS}>
+                    {Object.entries(CATS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+                  </select>
+                </div>
+                <div style={{ width: 130 }}>{label('จำนวนเงิน (฿)')}<input type="number" min="0" step="0.01" value={expForm.amount} onChange={(e) => setExpForm({ ...expForm, amount: e.target.value })} placeholder="0.00" style={inputS} /></div>
+                <div style={{ flex: 1, minWidth: 180 }}>{label('รายละเอียด (เช่น ซื้อจากร้านไหน)')}<input value={expForm.note} onChange={(e) => setExpForm({ ...expForm, note: e.target.value })} placeholder="เช่น ซื้อเพชร FF จากตัวแทน A" style={inputS} /></div>
+                <div onClick={addExpense} style={btnAcc}>+ บันทึก</div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                <span style={{ fontSize: 12.5, color: 'var(--t3,#878e9a)' }}>รายการเดือน</span>
+                <input type="month" value={expMonth} onChange={(e) => { setExpMonth(e.target.value); loadExpenses(e.target.value) }} style={{ ...inputS, width: 160 }} />
+              </div>
+              {expList.length === 0 && <div style={{ padding: 22, textAlign: 'center', fontSize: 13, color: 'var(--t3b,#6c727e)', background: 'var(--s-inset,#161922)', borderRadius: 12 }}>ยังไม่มีรายจ่ายในเดือนนี้</div>}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {expList.map((e) => (
+                  <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '10px 14px', background: 'var(--s-inset,#161922)', borderRadius: 12, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 12.5, color: 'var(--t3,#878e9a)', width: 84 }}>{e.date}</span>
+                    <span style={{ fontSize: 12.5, fontWeight: 600, width: 160 }}>{CATS[e.category] || e.category}</span>
+                    <span style={{ flex: 1, minWidth: 120, fontSize: 12.5, color: 'var(--t2,#9aa1ad)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.note || '—'}</span>
+                    <span style={{ fontFamily: "'Space Grotesk','IBM Plex Sans Thai'", fontWeight: 700, fontSize: 14 }}>{fmtB(e.amount)}</span>
+                    <SlotBox slotId={'exp-' + e.id} w={52} h={52} grad="linear-gradient(140deg,#3a3f52,#262b3a)" short="🧾" caption="ใบเสร็จ" fit="contain" />
+                    <span onClick={() => delExpense(e.id)} style={{ cursor: 'pointer', fontSize: 12, color: '#f87171', fontWeight: 600 }}>ลบ</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={card}>
+              <div style={{ fontFamily: "'Space Grotesk','IBM Plex Sans Thai'", fontWeight: 600, fontSize: 16, marginBottom: 4 }}>ข้อมูลผู้ประกอบการ</div>
+              <div style={{ fontSize: 12, color: 'var(--t3b,#6c727e)', marginBottom: 14 }}>พิมพ์หัวรายงานเงินสดรับ-จ่ายทุกไฟล์ และใช้กับใบกำกับภาษีในอนาคต</div>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                <div style={{ flex: 1, minWidth: 200 }}>{label('ชื่อผู้ประกอบการ / ร้าน')}<input value={profileF.name} onChange={(e) => setProfileF({ ...profileF, name: e.target.value })} placeholder="เช่น นายสมชาย ใจดี (gamedverygood)" style={inputS} /></div>
+                <div style={{ width: 200 }}>{label('เลขประจำตัวผู้เสียภาษี')}<input value={profileF.taxId} onChange={(e) => setProfileF({ ...profileF, taxId: e.target.value })} placeholder="13 หลัก" style={inputS} /></div>
+                <div style={{ flex: 2, minWidth: 240 }}>{label('ที่อยู่')}<input value={profileF.address} onChange={(e) => setProfileF({ ...profileF, address: e.target.value })} style={inputS} /></div>
+                <div onClick={saveProfile} style={btnAcc}>บันทึก</div>
+              </div>
+              <div style={{ fontSize: 11.5, color: 'var(--t3b,#6c727e)', marginTop: 14, lineHeight: 1.7 }}>
+                ℹ️ ระบบนี้ช่วยเก็บบันทึกให้ครบและตรงตามฟอร์มสรรพากร แต่ไม่ใช่คำแนะนำภาษี — การเลือกวิธีหักค่าใช้จ่าย (เหมา/ตามจริง) และจังหวะจด VAT ควรยืนยันกับนักบัญชี
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* ===== SITE MARQUEE ===== */}
       {tab === 'site' && (

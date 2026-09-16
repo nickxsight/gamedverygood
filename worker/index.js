@@ -36,6 +36,17 @@ async function migrate(db) {
   await db.prepare('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_ref ON users(ref_code)').run()
   // Fixed-window rate limiting for auth endpoints.
   await db.prepare('CREATE TABLE IF NOT EXISTS rate_limits (k TEXT PRIMARY KEY, n INTEGER NOT NULL, ws INTEGER NOT NULL)').run()
+  // Bookkeeping: expense journal (income comes from orders). Amounts are in
+  // satang so the ledger never accumulates float errors.
+  await db.prepare(`CREATE TABLE IF NOT EXISTS expenses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    date TEXT NOT NULL,
+    category TEXT NOT NULL DEFAULT 'other',
+    note TEXT NOT NULL DEFAULT '',
+    amount_satang INTEGER NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )`).run()
+  await db.prepare('CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(date)').run()
   // Admin-managed coupons and site settings (key/value JSON).
   await db.batch([
     db.prepare(`CREATE TABLE IF NOT EXISTS coupons (
@@ -519,14 +530,138 @@ async function handleAdmin(request, env, path, url) {
     return json({ ok: true })
   }
 
+  // ---- bookkeeping: expenses, summary, cash book export ----
+  // Accounting days follow Thai local time (UTC+7): the same clock the
+  // accountant reconciles against, so daily totals tie out.
+  const EXP_CATS = { cost: 'ต้นทุนซื้อเครดิตเกม', fee: 'ค่าธรรมเนียมชำระเงิน', ads: 'ค่าโฆษณา/การตลาด', system: 'ค่าบริการระบบ/โดเมน', other: 'อื่นๆ' }
+  const money = (satang) => (satang / 100).toFixed(2)
+
+  if (path === '/api/admin/finance/summary' && request.method === 'GET') {
+    const year = String(url.searchParams.get('year') || '').match(/^\d{4}$/) ? url.searchParams.get('year') : String(new Date().getFullYear())
+    const rev = await db.prepare(
+      `SELECT strftime('%m', date(created_at, '+7 hours')) AS m, COUNT(*) AS n, COALESCE(SUM(price),0) AS rev
+       FROM orders WHERE status = 'success' AND strftime('%Y', date(created_at, '+7 hours')) = ? GROUP BY m`,
+    ).bind(year).all()
+    const exp = await db.prepare(
+      `SELECT strftime('%m', date) AS m, category, COALESCE(SUM(amount_satang),0) AS s
+       FROM expenses WHERE strftime('%Y', date) = ? GROUP BY m, category`,
+    ).bind(year).all()
+    const months = Array.from({ length: 12 }, (_, i) => ({ m: i + 1, orders: 0, revenue: 0, expense: 0 }))
+    for (const r of rev.results || []) { const i = Number(r.m) - 1; months[i].orders = r.n; months[i].revenue = r.rev }
+    const byCat = {}
+    for (const e of exp.results || []) {
+      months[Number(e.m) - 1].expense += e.s / 100
+      byCat[e.category] = (byCat[e.category] || 0) + e.s / 100
+    }
+    const profile = (await getSetting(db, 'bizProfile')) || {}
+    return json({
+      year: Number(year), months, byCat, cats: EXP_CATS, profile,
+      ytdRevenue: months.reduce((a, x) => a + x.revenue, 0),
+      ytdExpense: months.reduce((a, x) => a + x.expense, 0),
+    })
+  }
+
+  if (path === '/api/admin/finance/expenses' && request.method === 'GET') {
+    const month = String(url.searchParams.get('month') || '').match(/^\d{4}-\d{2}$/) ? url.searchParams.get('month') : null
+    const rows = month
+      ? await db.prepare("SELECT * FROM expenses WHERE strftime('%Y-%m', date) = ? ORDER BY date DESC, id DESC LIMIT 500").bind(month).all()
+      : await db.prepare('SELECT * FROM expenses ORDER BY date DESC, id DESC LIMIT 500').all()
+    return json({ expenses: (rows.results || []).map((e) => ({ id: e.id, date: e.date, category: e.category, note: e.note, amount: e.amount_satang / 100 })) })
+  }
+  if (path === '/api/admin/finance/expenses' && request.method === 'POST') {
+    const b = await readBody(request)
+    const date = String((b && b.date) || '')
+    const category = EXP_CATS[b && b.category] ? b.category : 'other'
+    const note = String((b && b.note) || '').trim().slice(0, 200)
+    const amount = Number(b && b.amount)
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return json({ message: 'วันที่ไม่ถูกต้อง' }, 400)
+    if (!Number.isFinite(amount) || amount <= 0 || amount > 10000000) return json({ message: 'จำนวนเงินต้องอยู่ระหว่าง 0.01–10,000,000 บาท' }, 400)
+    const row = await db.prepare(
+      'INSERT INTO expenses (date, category, note, amount_satang) VALUES (?, ?, ?, ?) RETURNING id',
+    ).bind(date, category, note, Math.round(amount * 100)).first()
+    return json({ ok: true, id: row.id })
+  }
+  const expMatch = path.match(/^\/api\/admin\/finance\/expenses\/(\d{1,10})$/)
+  if (expMatch && request.method === 'DELETE') {
+    const id = Number(expMatch[1])
+    await db.batch([
+      db.prepare('DELETE FROM expenses WHERE id = ?').bind(id),
+      db.prepare('DELETE FROM images WHERE slot_id = ?').bind('exp-' + id),
+    ])
+    return json({ ok: true })
+  }
+
+  if (path === '/api/admin/settings/bizprofile' && request.method === 'PUT') {
+    const b = await readBody(request)
+    const profile = {
+      name: String((b && b.name) || '').trim().slice(0, 120),
+      taxId: String((b && b.taxId) || '').trim().slice(0, 20),
+      address: String((b && b.address) || '').trim().slice(0, 400),
+    }
+    await db.prepare("INSERT INTO settings (key, value) VALUES ('bizProfile', ?) ON CONFLICT(key) DO UPDATE SET value = ?")
+      .bind(JSON.stringify(profile), JSON.stringify(profile)).run()
+    return json({ ok: true, profile })
+  }
+
+  // รายงานเงินสดรับ-จ่าย (Revenue Department cash book layout). Revenue rows
+  // are daily aggregates with order counts, so each line reconciles against
+  // the order-level export for the same period.
+  if (path === '/api/admin/export/cashbook.csv' && request.method === 'GET') {
+    const year = String(url.searchParams.get('year') || '').match(/^\d{4}$/) ? url.searchParams.get('year') : String(new Date().getFullYear())
+    const month = String(url.searchParams.get('month') || '').match(/^(0[1-9]|1[0-2])$/) ? url.searchParams.get('month') : null
+    const prefix = month ? `${year}-${month}` : year
+    const rev = await db.prepare(
+      `SELECT date(created_at, '+7 hours') AS d, COUNT(*) AS n, COALESCE(SUM(price),0) AS rev
+       FROM orders WHERE status = 'success' AND date(created_at, '+7 hours') LIKE ? GROUP BY d`,
+    ).bind(prefix + '%').all()
+    const exp = await db.prepare('SELECT date, category, note, amount_satang FROM expenses WHERE date LIKE ? ORDER BY date, id').bind(prefix + '%').all()
+    const rows = []
+    for (const r of rev.results || []) rows.push({ d: r.d, desc: `รายรับจากการขายเติมเกม (${r.n} ออเดอร์)`, inc: r.rev * 100, buy: 0, oth: 0 })
+    for (const e of exp.results || []) {
+      const buy = e.category === 'cost'
+      rows.push({ d: e.date, desc: (EXP_CATS[e.category] || 'อื่นๆ') + (e.note ? ' — ' + e.note : ''), inc: 0, buy: buy ? e.amount_satang : 0, oth: buy ? 0 : e.amount_satang })
+    }
+    rows.sort((a, b) => a.d < b.d ? -1 : a.d > b.d ? 1 : 0)
+    const profile = (await getSetting(db, 'bizProfile')) || {}
+    const esc = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"'
+    const lines = [
+      esc('รายงานเงินสดรับ-จ่าย ' + (month ? `ประจำเดือน ${month}/${year}` : `ประจำปี ${year}`)),
+      esc('ชื่อผู้ประกอบการ: ' + (profile.name || '-') + ' · เลขประจำตัวผู้เสียภาษี: ' + (profile.taxId || '-')),
+      '',
+      ['วัน/เดือน/ปี', 'รายการ', 'รายรับ', 'รายจ่าย: ซื้อสินค้า', 'รายจ่าย: ค่าใช้จ่ายอื่น', 'หมายเหตุ'].map(esc).join(','),
+    ]
+    let tInc = 0, tBuy = 0, tOth = 0
+    for (const r of rows) {
+      tInc += r.inc; tBuy += r.buy; tOth += r.oth
+      lines.push([r.d, r.desc, r.inc ? money(r.inc) : '', r.buy ? money(r.buy) : '', r.oth ? money(r.oth) : '', ''].map(esc).join(','))
+    }
+    lines.push(['', 'รวม', money(tInc), money(tBuy), money(tOth), ''].map(esc).join(','))
+    lines.push(['', 'รายรับสุทธิ (รับ − จ่าย)', money(tInc - tBuy - tOth), '', '', ''].map(esc).join(','))
+    return new Response('﻿' + lines.join('\r\n'), {
+      headers: {
+        'Content-Type': 'text/csv; charset=utf-8',
+        'Content-Disposition': `attachment; filename="cashbook-${prefix}.csv"`,
+      },
+    })
+  }
+
   // ---- sales export (CSV, Excel-friendly with BOM) ----
   if (path === '/api/admin/export/orders.csv' && request.method === 'GET') {
-    const rows = await db.prepare(
-      `SELECT o.id, o.created_at, u.email, u.name, o.gid, o.amount, o.pkg, o.price, o.status, o.ref
-       FROM orders o JOIN users u ON u.id = o.user_id ORDER BY o.id DESC LIMIT 5000`,
-    ).all()
+    // Optional ?month=YYYY-MM narrows to one Thai-local accounting month, so
+    // the detail lines tie against the cash book's daily revenue rows.
+    const month = String(url.searchParams.get('month') || '').match(/^\d{4}-\d{2}$/) ? url.searchParams.get('month') : null
+    const rows = month
+      ? await db.prepare(
+        `SELECT o.id, datetime(o.created_at, '+7 hours') AS created_at, u.email, u.name, o.gid, o.amount, o.pkg, o.price, o.status, o.ref
+         FROM orders o JOIN users u ON u.id = o.user_id
+         WHERE strftime('%Y-%m', date(o.created_at, '+7 hours')) = ? ORDER BY o.id DESC LIMIT 5000`,
+      ).bind(month).all()
+      : await db.prepare(
+        `SELECT o.id, datetime(o.created_at, '+7 hours') AS created_at, u.email, u.name, o.gid, o.amount, o.pkg, o.price, o.status, o.ref
+         FROM orders o JOIN users u ON u.id = o.user_id ORDER BY o.id DESC LIMIT 5000`,
+      ).all()
     const esc = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"'
-    const lines = ['id,วันที่,อีเมล,ชื่อ,เกม,จำนวน,แพ็กเกจ,ราคา(฿),สถานะ,เลขอ้างอิง']
+    const lines = ['id,วันที่ (เวลาไทย),อีเมล,ชื่อ,เกม,จำนวน,แพ็กเกจ,ราคา(฿),สถานะ,เลขอ้างอิง']
     for (const o of rows.results || []) {
       lines.push([o.id, o.created_at, o.email, o.name, o.gid, o.amount, o.pkg, o.price, o.status, o.ref].map(esc).join(','))
     }
