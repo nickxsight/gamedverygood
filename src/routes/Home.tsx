@@ -117,6 +117,24 @@ export default function Home({ v }: { v: Vals }) {
         </div>
       </div>
 
+      {/* ===== QUICK REORDER (members with a past order) ===== */}
+      {v.quickReorder && !v.hasQuery && (
+        <div style={{ maxWidth: 1240, margin: '0 auto', padding: '18px var(--wrap-pad,28px) 0' }}>
+          <div onClick={v.quickReorder.go} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', maxWidth: 660, margin: '0 auto', backdropFilter: 'blur(15px) saturate(1.4)', WebkitBackdropFilter: 'blur(15px) saturate(1.4)', background: 'var(--s-card,#13151d)', border: '1.5px solid rgba(124,131,255,.35)', borderRadius: 16, boxShadow: '0 14px 34px -20px var(--acc,#4f46e5)' }}>
+            <div style={css('overflow:hidden;width:46px;height:46px;border-radius:12px;flex-shrink:0;display:grid;place-items:center;font-family:\'Space Grotesk\',\'IBM Plex Sans Thai\';font-weight:700;font-size:13px;color:#fff; ' + v.quickReorder.coverStyle)}>
+              {v.quickReorder.imgSrc ? <img src={v.quickReorder.imgSrc} alt="" draggable={false} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} /> : v.quickReorder.short}
+            </div>
+            <div style={{ flex: 1, minWidth: 0, lineHeight: 1.35 }}>
+              <div style={{ fontSize: 11.5, fontWeight: 600, letterSpacing: '.4px', color: 'var(--acc,#4f46e5)' }}>⚡ เติมซ้ำครั้งก่อน</div>
+              <div style={{ fontSize: 14.5, fontWeight: 600, color: 'var(--t1,#eef0f5)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {v.quickReorder.name} · {v.quickReorder.label}{v.quickReorder.priceLabel ? ` · ${v.quickReorder.priceLabel}` : ''}
+              </div>
+            </div>
+            <div style={{ flexShrink: 0, height: 40, padding: '0 18px', display: 'grid', placeItems: 'center', background: 'var(--acc,#4f46e5)', borderRadius: 11, fontWeight: 600, fontSize: 13, color: '#fff' }}>เติมเลย →</div>
+          </div>
+        </div>
+      )}
+
       {/* ===== SEARCH RESULTS ===== */}
       {v.hasQuery && (
         <div style={{ maxWidth: 1240, margin: '0 auto', padding: '22px var(--wrap-pad,28px) 0' }}>

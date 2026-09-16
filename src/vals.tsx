@@ -233,22 +233,30 @@ export function computeVals(st: Store) {
     const c = m[stx] || m.Free
     return `font-size:10.5px;font-weight:600;padding:4px 9px;border-radius:7px;background:${c[0]};color:${c[1]};`
   }
+  // Only t1 (sensitivity) and t8 (gacha) actually work — the rest are labeled
+  // "เร็วๆ นี้" honestly instead of pretending to toggle on.
+  const soonBadge = 'padding:4px 10px;border-radius:7px;font-size:10.5px;font-weight:600;background:var(--s-input,#181b24);border:1px solid var(--bd2,rgba(255,255,255,.12));color:var(--t3b,#6c727e);'
   const tools = TOOLS.filter((t) => s.tool === 'all' || t.cat === s.tool).map((t, i) => {
-    const on = !!s.active[t.id]
     const func = (t.id === 't1' || t.id === 't8')
     return {
-      ...t, iconStyle: cover(['#6366f1', '#22d3ee', '#34d399', '#fb7185', '#fbbf24'][i % 5], ['#4f46e5', '#0ea5e9', '#16a34a', '#f43f5e', '#f97316'][i % 5]),
-      badgeStyle: badge(t.status),
-      toggle: func ? () => st.openTool(t.id) : () => st.set((x) => ({ active: { ...x.active, [t.id]: !x.active[t.id] } })),
-      btnLabel: func ? 'เปิดเครื่องมือ →' : (on ? 'กำลังใช้งาน ✓' : 'เปิดใช้งาน'),
-      btnStyle: `cursor:pointer;padding:8px 16px;border-radius:9px;font-size:12.5px;font-weight:600;transition:all .2s;background:${(on && !func) ? 'rgba(34,197,94,.14)' : 'var(--acc,#4f46e5)'};color:${(on && !func) ? 'var(--good,#16a34a)' : '#fff'};border:1.5px solid ${(on && !func) ? 'rgba(34,197,94,.35)' : 'transparent'};`,
+      ...t, status: func ? t.status : 'เร็วๆ นี้',
+      iconStyle: cover(['#6366f1', '#22d3ee', '#34d399', '#fb7185', '#fbbf24'][i % 5], ['#4f46e5', '#0ea5e9', '#16a34a', '#f43f5e', '#f97316'][i % 5]),
+      badgeStyle: func ? badge(t.status) : soonBadge,
+      toggle: func ? () => st.openTool(t.id) : () => st.showToast('เครื่องมือนี้กำลังพัฒนา เปิดใช้เร็วๆ นี้', '🔧'),
+      btnLabel: func ? 'เปิดเครื่องมือ →' : 'เร็วๆ นี้',
+      btnStyle: func
+        ? 'cursor:pointer;padding:8px 16px;border-radius:9px;font-size:12.5px;font-weight:600;transition:all .2s;background:var(--acc,#4f46e5);color:#fff;border:1.5px solid transparent;'
+        : 'cursor:default;padding:8px 16px;border-radius:9px;font-size:12.5px;font-weight:600;background:var(--s-input,#181b24);color:var(--t3b,#6c727e);border:1.5px solid var(--bd-soft,rgba(255,255,255,.06));',
     }
   })
-  const featuredTools = TOOLS.slice(0, 4).map((t, i) => ({
-    ...t,
-    iconStyle: cover(['#6366f1', '#22d3ee', '#34d399', '#fb7185'][i], ['#4f46e5', '#0ea5e9', '#16a34a', '#f43f5e'][i]),
-    badgeStyle: badge(t.status),
-  }))
+  const featuredTools = TOOLS.slice(0, 4).map((t, i) => {
+    const func = (t.id === 't1' || t.id === 't8')
+    return {
+      ...t, status: func ? t.status : 'เร็วๆ นี้',
+      iconStyle: cover(['#6366f1', '#22d3ee', '#34d399', '#fb7185'][i], ['#4f46e5', '#0ea5e9', '#16a34a', '#f43f5e'][i]),
+      badgeStyle: func ? badge(t.status) : soonBadge,
+    }
+  })
 
   const newsCats = ['all', 'อัปเดต', 'อีสปอร์ต', 'รีวิว', 'โปรโมชั่น', 'ไกด์']
   const newsFilters = newsCats.map((c) => ({
@@ -363,6 +371,27 @@ export function computeVals(st: Store) {
 
   // order status steps
   const ps = s.payStatus
+
+  // Success receipt (shown in place of the summary actions once paid).
+  const receipt = ps === 'success' ? {
+    ref: '#' + (s.payRef || ''),
+    gameName: g.name, amountLabel: `${cur.amount} ${g.currency}`,
+    playerId: s.playerId || '—',
+    copy: () => { try { navigator.clipboard?.writeText('#' + (s.payRef || '')) } catch { /* */ } st.showToast('คัดลอกเลขออเดอร์แล้ว', '📋') },
+    more: () => setGo({ route: 'catalog', payStatus: 'idle' }),
+    history: () => setGo({ route: 'history', payStatus: 'idle' }),
+  } : null
+
+  // One-tap repeat of the member's last successful top-up, shown on the home page.
+  const lastOk = (s.myOrders || []).find((o) => o.status === 'success')
+  const reGame = lastOk ? GAMES.find((x) => x.id === lastOk.gid) : null
+  const quickReorder = (lastOk && reGame) ? {
+    name: reGame.name, short: reGame.short, coverStyle: cover(reGame.c1, reGame.c2),
+    imgSrc: s.serverImages['img-' + reGame.id] ? `/api/images/img-${reGame.id}?v=${s.serverImages['img-' + reGame.id]}` : null,
+    label: [lastOk.amount, reGame.currency].filter(Boolean).join(' ') || reGame.currency,
+    priceLabel: lastOk.price ? `฿${lastOk.price}` : '',
+    go: () => st.reorder(lastOk.gid, lastOk.pkg),
+  } : null
   const stepDot = (state: string) => {
     if (state === 'done') return `width:22px;height:22px;border-radius:50%;flex-shrink:0;display:grid;place-items:center;font-size:11px;color:#fff;background:var(--good,#16a34a);`
     if (state === 'active') return `width:22px;height:22px;border-radius:50%;flex-shrink:0;display:grid;place-items:center;font-size:11px;color:#fff;background:var(--acc,#4f46e5);`
@@ -698,7 +727,8 @@ export function computeVals(st: Store) {
     playerIdShown: s.playerId || '—',
     payName: curPay.name,
     payIdle: ps === 'idle', payActive: ps !== 'idle',
-    payAwaiting: ps === 'awaiting', payProcessing: ps === 'processing' || ps === 'success',
+    payAwaiting: ps === 'awaiting', payProcessing: ps === 'processing',
+    paySuccess: ps === 'success', receipt, quickReorder,
     payBtnLabel: 'ยืนยันการชำระเงิน · ฿' + grandTotal,
     payPanel, payQrEl,
     receivePayment: () => st.receivePayment(),

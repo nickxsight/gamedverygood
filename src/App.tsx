@@ -26,6 +26,10 @@ import Legal from './routes/Legal'
 // Fixed brand vibe (the design prototype's default "Indigo").
 const VIBE = ['#6d6af5', '#8b91ff', '#22c55e']
 
+// Budget phones choke on animated 70–90px blurs + film grain; serve a lighter
+// static background there (index.css also drops backdrop-filter on mobile).
+const LITE = typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches
+
 export default function App() {
   const st = useStore()
   const set = st.set
@@ -77,14 +81,14 @@ export default function App() {
 
   return (
     <div ref={rootRef} data-root style={{ ['--wrap-pad' as string]: '28px', position: 'relative', minHeight: '100vh', background: 'var(--s-bg,#0a0b12)', color: 'var(--t1,#eef0f5)', fontFamily: "'IBM Plex Sans Thai','Space Grotesk',system-ui,sans-serif", overflowX: 'hidden' }}>
-      {/* aurora / mesh background */}
+      {/* aurora / mesh background (static, dimmer on mobile) */}
       <div aria-hidden="true" style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: '-12%', left: '-8%', width: '46vw', height: '46vw', borderRadius: '50%', background: 'radial-gradient(circle,var(--acc,#4f46e5),transparent 68%)', opacity: .4, filter: 'blur(70px)', animation: 'gvgAur1 22s ease-in-out infinite' }} />
-        <div style={{ position: 'absolute', top: '8%', right: '-10%', width: '42vw', height: '42vw', borderRadius: '50%', background: 'radial-gradient(circle,#fb7185,transparent 68%)', opacity: .32, filter: 'blur(80px)', animation: 'gvgAur2 26s ease-in-out infinite' }} />
-        <div style={{ position: 'absolute', bottom: '-16%', left: '28%', width: '50vw', height: '50vw', borderRadius: '50%', background: 'radial-gradient(circle,#a855f7,transparent 68%)', opacity: .3, filter: 'blur(90px)', animation: 'gvgAur3 30s ease-in-out infinite' }} />
+        <div style={{ position: 'absolute', top: '-12%', left: '-8%', width: '46vw', height: '46vw', borderRadius: '50%', background: 'radial-gradient(circle,var(--acc,#4f46e5),transparent 68%)', opacity: LITE ? .28 : .4, filter: LITE ? 'blur(46px)' : 'blur(70px)', animation: LITE ? undefined : 'gvgAur1 22s ease-in-out infinite' }} />
+        <div style={{ position: 'absolute', top: '8%', right: '-10%', width: '42vw', height: '42vw', borderRadius: '50%', background: 'radial-gradient(circle,#fb7185,transparent 68%)', opacity: LITE ? .22 : .32, filter: LITE ? 'blur(50px)' : 'blur(80px)', animation: LITE ? undefined : 'gvgAur2 26s ease-in-out infinite' }} />
+        <div style={{ position: 'absolute', bottom: '-16%', left: '28%', width: '50vw', height: '50vw', borderRadius: '50%', background: 'radial-gradient(circle,#a855f7,transparent 68%)', opacity: LITE ? .2 : .3, filter: LITE ? 'blur(54px)' : 'blur(90px)', animation: LITE ? undefined : 'gvgAur3 30s ease-in-out infinite' }} />
       </div>
-      {/* film grain */}
-      <div aria-hidden="true" style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', opacity: .05, mixBlendMode: 'overlay', backgroundImage: "url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22140%22 height=%22140%22><filter id=%22n%22><feTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%222%22/></filter><rect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/></svg>')" }} />
+      {/* film grain (desktop only — costly on phones) */}
+      {!LITE && <div aria-hidden="true" style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', opacity: .05, mixBlendMode: 'overlay', backgroundImage: "url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22140%22 height=%22140%22><filter id=%22n%22><feTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%222%22/></filter><rect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/></svg>')" }} />}
 
       <PromoBar v={v} />
       <Nav v={v} />

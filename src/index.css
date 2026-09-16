@@ -88,3 +88,20 @@ body { margin: 0; background: #0a0912; }
   [data-resp="foot"] { grid-template-columns: 1fr !important; }
   [data-hero-h1] { font-size: 33px !important; }
 }
+
+/* Mobile performance: backdrop-filter is the single heaviest effect on budget
+   phones — drop it under 768px (cards keep their translucent backgrounds). */
+@media (max-width: 768px) {
+  [data-root] *, [data-root] {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+
+/* Respect the OS-level reduced-motion setting. */
+@media (prefers-reduced-motion: reduce) {
+  [data-root] *, [data-root] *::before, [data-root] *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

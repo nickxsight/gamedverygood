@@ -88,6 +88,21 @@ function nowTime(): string {
 }
 function scrollTop() { if (typeof window !== 'undefined') window.scrollTo(0, 0) }
 
+// Remembered Player ID / Server per game, so repeat customers never retype.
+export function loadSavedIds(gid: string): { p: string; s: string } | null {
+  try {
+    const m = JSON.parse(localStorage.getItem('gvg-ids') || '{}')
+    return m[gid] && typeof m[gid].p === 'string' ? m[gid] : null
+  } catch { return null }
+}
+function saveIds(gid: string, playerId: string, serverId: string) {
+  try {
+    const m = JSON.parse(localStorage.getItem('gvg-ids') || '{}')
+    m[gid] = { p: playerId, s: serverId }
+    localStorage.setItem('gvg-ids', JSON.stringify(m))
+  } catch { /* */ }
+}
+
 // ── keyword fallback bot ─────────────────────────────────────────────────────
 function detectGames(t: string, games: Game[]): string[] {
   const found: string[] = []
@@ -250,7 +265,7 @@ export const useStore = create<Store>((set, get) => {
 
   return {
     // ── initial state ──
-    route: 'home', game: 'ro3', pkg: 'p3', playerId: '', serverId: '', pay: 'crypto',
+    route: 'home', game: 'ro3', pkg: 'p3', playerId: '', serverId: '', pay: 'promptpay',
     news: 'all', tool: 'all', q: '', payStatus: 'idle', payRef: '', tickerIdx: 0, promoIdx: 0,
     active: {}, pbFilter: 'all', boardPage: 0, myOrders: null, searchFocus: false,
     catCat: 'all', catPlatform: 'all', catSort: 'popular',
@@ -274,6 +289,8 @@ export const useStore = create<Store>((set, get) => {
 
     doPay: () => {
       if (get().payStatus !== 'idle') return
+      const st = get()
+      if (st.playerId.trim()) saveIds(st.game, st.playerId.trim(), st.serverId.trim())
       set({ payStatus: 'awaiting', payRef: 'GVG' + Math.floor(100000 + Math.random() * 899999) })
       timers.payWatch = setTimeout(() => get().receivePayment(), 7000)
     },

@@ -1,10 +1,20 @@
+import { useEffect } from 'react'
 import { css } from '../css'
 import type { Vals } from '../vals'
+import { useStore, loadSavedIds } from '../store'
 
 const step = (label: string) => <div style={{ fontSize: 13.5, color: 'var(--t3,#878e9a)', marginBottom: 14, fontWeight: 600 }}>{label}</div>
 
 export default function Topup({ v }: { v: Vals }) {
   const g: any = v.g
+  // Repeat customers: prefill the Player ID / Server they used for this game
+  // last time (saved on payment), refreshed whenever the selected game changes.
+  const game = useStore((s) => s.game)
+  const set = useStore((s) => s.set)
+  useEffect(() => {
+    const saved = loadSavedIds(game)
+    set({ playerId: saved?.p || '', serverId: saved?.s || '' })
+  }, [game, set])
   return (
     <section data-screen-label="Top-up" style={{ maxWidth: 1240, margin: '0 auto', padding: '40px var(--wrap-pad,28px) 0' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16, flexWrap: 'wrap', marginBottom: 26 }}>
@@ -155,6 +165,22 @@ export default function Topup({ v }: { v: Vals }) {
               </div>
               <div onClick={v.receivePayment} style={{ cursor: 'pointer', height: 48, display: 'grid', placeItems: 'center', background: 'var(--acc,#4f46e5)', borderRadius: 12, fontWeight: 600, fontSize: 14.5, color: '#fff', marginBottom: 9 }}>ฉันชำระเงินแล้ว</div>
               <div onClick={v.cancelPay} style={{ cursor: 'pointer', height: 40, display: 'grid', placeItems: 'center', fontSize: 13, color: 'var(--t3,#878e9a)' }}>ยกเลิก</div>
+            </div>
+          )}
+
+          {/* success receipt */}
+          {v.paySuccess && v.receipt && (
+            <div style={{ background: 'rgba(34,197,94,.08)', border: '1px solid rgba(34,197,94,.35)', borderRadius: 16, padding: 22, textAlign: 'center', animation: 'gvgUp .3s ease' }}>
+              <div style={{ width: 54, height: 54, margin: '0 auto 12px', borderRadius: '50%', display: 'grid', placeItems: 'center', background: 'var(--good,#16a34a)', color: '#fff', fontSize: 26, boxShadow: '0 10px 26px -10px rgba(34,197,94,.8)' }}>✓</div>
+              <div style={{ fontFamily: "'Space Grotesk','IBM Plex Sans Thai'", fontWeight: 700, fontSize: 19, marginBottom: 4 }}>เติมสำเร็จ!</div>
+              <div style={{ fontSize: 13, color: 'var(--t2,#9aa1ad)', marginBottom: 16 }}>{v.receipt.amountLabel} เข้า {v.receipt.gameName} (ID: {v.receipt.playerId}) แล้ว</div>
+              <div onClick={v.receipt.copy} title="แตะเพื่อคัดลอก" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '12px 16px', background: 'var(--s-card,#13151d)', border: '1px solid var(--bd2,rgba(255,255,255,.12))', borderRadius: 12, marginBottom: 16 }}>
+                <span style={{ fontSize: 11.5, color: 'var(--t3b,#6c727e)' }}>เลขออเดอร์</span>
+                <span style={{ fontFamily: "'Space Grotesk','IBM Plex Sans Thai'", fontWeight: 700, fontSize: 16, color: 'var(--t1,#eef0f5)' }}>{v.receipt.ref}</span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--acc,#4f46e5)' }}>คัดลอก</span>
+              </div>
+              <div onClick={v.receipt.more} style={{ cursor: 'pointer', height: 48, display: 'grid', placeItems: 'center', background: 'var(--acc,#4f46e5)', borderRadius: 12, fontWeight: 600, fontSize: 14.5, color: '#fff', marginBottom: 9 }}>เติมเกมอื่นต่อ →</div>
+              <div onClick={v.receipt.history} style={{ cursor: 'pointer', height: 42, display: 'grid', placeItems: 'center', fontSize: 13, fontWeight: 500, color: 'var(--t2,#9aa1ad)' }}>ดูประวัติการเติม</div>
             </div>
           )}
 
