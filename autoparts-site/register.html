@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#1b3a63" />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/styles.css" />
+  <script src="site-config.js"></script>
+  <title>สมัครใช้งาน | JPN AUTOPARTS</title>
+  <meta name="description" content="สมัครทดลองใช้ระบบบริหารร้านอะไหล่ยนต์ฟรี 14 วัน ไม่ต้องใช้บัตรเครดิต" />
+  <meta property="og:title" content="สมัครใช้งาน | JPN AUTOPARTS" />
+  <meta property="og:description" content="สมัครทดลองใช้ระบบบริหารร้านอะไหล่ยนต์ฟรี 14 วัน ไม่ต้องใช้บัตรเครดิต" />
+</head>
+<body>
+  <header class="header">
+    <div class="container">
+      <a class="brand" href="index.html"><span class="ic">🔧</span> <span data-cfg="brand">JPN AUTOPARTS</span></a>
+      <div class="header-actions">
+        <a class="btn btn-outline-white" href="login.html">เข้าสู่ระบบ</a>
+        <a class="btn btn-orange" href="register.html">สมัครใช้งาน</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="auth">
+    <form class="auth-card" id="register-form" novalidate>
+      <h1>สมัครใช้งาน</h1>
+      <p class="muted">ทดลองใช้ฟรี <span data-cfg="trialDays">14</span> วัน ไม่ต้องใช้บัตรเครดิต ไม่มีการเรียกเก็บเงินอัตโนมัติ</p>
+      <div class="form-error" role="alert"></div>
+      <div class="field"><label for="shop">ชื่อร้าน</label><input id="shop" name="shop" required placeholder="เช่น ร้านอะไหล่ยนต์สมชาย" /></div>
+      <div class="field"><label for="name">ชื่อผู้ติดต่อ</label><input id="name" name="name" required placeholder="ชื่อ-นามสกุล" autocomplete="name" /></div>
+      <div class="field"><label for="phone">เบอร์โทร</label><input id="phone" name="phone" type="tel" placeholder="08x-xxx-xxxx" autocomplete="tel" /></div>
+      <div class="field"><label for="email">อีเมล</label><input id="email" name="email" type="email" required placeholder="you@shop.com" autocomplete="username" /></div>
+      <div class="field"><label for="password">รหัสผ่าน</label><input id="password" name="password" type="password" required minlength="6" autocomplete="new-password" placeholder="อย่างน้อย 6 ตัวอักษร" /></div>
+      <div class="field"><label for="plan">แพ็กเกจที่สนใจ</label>
+        <select id="plan" name="plan"><option value="starter">Starter — 390 บาท/เดือน</option><option value="standard" selected>Standard — 790 บาท/เดือน</option><option value="pro">Pro — 1,490 บาท/เดือน</option></select>
+        <div class="hint">เปลี่ยนแพ็กเกจได้ทุกเมื่อหลังหมดช่วงทดลอง</div>
+      </div>
+      <button class="btn btn-orange btn-block" type="submit">เริ่มทดลองใช้ฟรี <span data-cfg="trialDays">14</span> วัน</button>
+      <p class="alt">มีบัญชีแล้ว? <a href="login.html">เข้าสู่ระบบ</a></p>
+    </form>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div>
+        <h4>🔧 <span data-cfg="brand">JPN AUTOPARTS</span></h4>
+        <p><span data-cfg="tagline">ระบบบริหารงานร้านอะไหล่ยนต์ออนไลน์</span> — บริหารสินค้า สต็อก ซื้อ และขาย ในระบบเดียว ใช้งานได้ทันทีผ่านเบราว์เซอร์ ไม่ต้องติดตั้ง</p>
+      </div>
+      <div>
+        <h4>เมนู</h4>
+        <ul>
+          <li><a href="index.html#features">ฟังก์ชันหลัก</a></li>
+          <li><a href="index.html#pricing">แพ็กเกจ</a></li>
+          <li><a href="docs.html">คู่มือการใช้งาน</a></li>
+          <li><a href="login.html">เข้าสู่ระบบ</a></li>
+          <li><a href="register.html">สมัครใช้งาน</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>ติดต่อ</h4>
+        <ul>
+          <li>💬 LINE: <a data-cfg="line" data-cfg-href="lineUrl" href="#">jpnpart</a></li>
+          <li>📞 Mobile: <a data-cfg="mobile" data-cfg-attr="tel" href="#">08x-xxx-xxxx</a></li>
+          <li>✉️ Email: <a data-cfg="email" data-cfg-attr="mailto" href="#">sales@jpnpart.example</a></li>
+        </ul>
+      </div>
+      <div class="copy">© <span data-year>2026</span> <span data-cfg="brand">JPN AUTOPARTS</span>. All rights reserved.</div>
+    </div>
+  </footer>
+  <script src="assets/site.js"></script>
+</body>
+</html>

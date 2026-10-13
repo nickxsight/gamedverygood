@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#1b3a63" />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/styles.css" />
+  <script src="site-config.js"></script>
+  <title>ระบบบริหารร้านอะไหล่ยนต์ | JPN AUTOPARTS</title>
+  <meta name="description" content="ระบบร้านอะไหล่ยนต์แบบ SaaS บริหารสินค้า สต็อก ซื้อ และขาย ในระบบเดียว ทดลองใช้ฟรี 14 วัน" />
+  <meta property="og:title" content="ระบบบริหารร้านอะไหล่ยนต์ | JPN AUTOPARTS" />
+  <meta property="og:description" content="ระบบร้านอะไหล่ยนต์แบบ SaaS บริหารสินค้า สต็อก ซื้อ และขาย ในระบบเดียว ทดลองใช้ฟรี 14 วัน" />
+</head>
+<body>
+  <header class="header">
+    <div class="container">
+      <a class="brand" href="index.html"><span class="ic">🔧</span> <span data-cfg="brand">JPN AUTOPARTS</span></a>
+      <div class="header-actions">
+        <a class="btn btn-outline-white" href="login.html">เข้าสู่ระบบ</a>
+        <a class="btn btn-orange" href="register.html">สมัครใช้งาน</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container">
+        <div>
+          <span class="badge">ระบบร้านอะไหล่ยนต์แบบ SaaS</span>
+          <h1>บริหารสินค้า สต็อก ซื้อ และขาย<br>ในระบบเดียว</h1>
+          <p class="lead"><span data-cfg="brand">JPN AUTOPARTS</span> ช่วยให้ร้านอะไหล่ตรวจสอบสต็อก รับสินค้า และขายสินค้าได้รวดเร็ว พร้อมประวัติความเคลื่อนไหวที่ตรวจสอบย้อนหลังได้</p>
+          <div class="hero-actions">
+            <a class="btn btn-orange" href="register.html">ทดลองใช้ฟรี <span data-cfg="trialDays">14</span> วัน</a>
+            <a class="btn btn-outline-blue" href="login.html">เข้าสู่ระบบ</a>
+            <a class="btn btn-outline" href="docs.html">คู่มือการใช้งาน</a>
+          </div>
+          <div class="contact-card">
+            <h3>ติดต่อสอบถามและทดลองใช้งาน</h3>
+            <div class="contact-row">
+              <a class="btn btn-green btn-sm" data-cfg-href="lineUrl" href="#" target="_blank" rel="noopener">💬 LINE: <span data-cfg="line">jpnpart</span></a>
+              <a class="btn btn-outline-blue btn-sm" data-cfg-attr="tel" href="#">📞 Mobile: <span data-cfg="mobile">08x-xxx-xxxx</span></a>
+            </div>
+            <a class="email" data-cfg-attr="mailto" href="#">✉️ Email: <span data-cfg="email">sales@jpnpart.example</span></a>
+          </div>
+        </div>
+
+        <div class="hero-card">
+          <div class="hero-banner">
+            <div class="txt">
+              <span class="t1" data-cfg="brandShort">JPN</span>
+              <span class="t2" data-cfg="brandRest">AUTOPARTS</span>
+              <div class="t3" data-cfg="tagline">ระบบบริหารงานร้านอะไหล่ยนต์ออนไลน์</div>
+            </div>
+            <!-- stylised parts illustration: brake disc, coil spring, gear, spark plug -->
+            <svg class="parts" viewBox="0 0 400 320" fill="none" aria-hidden="true">
+              <defs>
+                <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4a5566"/><stop offset="1" stop-color="#1e2733"/></linearGradient>
+                <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9aa6b5"/><stop offset="1" stop-color="#5d6a7a"/></linearGradient>
+                <linearGradient id="g3" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffb366"/><stop offset="1" stop-color="#d96a00"/></linearGradient>
+              </defs>
+              <!-- brake disc -->
+              <g transform="translate(250 120)">
+                <circle r="92" fill="url(#g1)"/>
+                <circle r="92" fill="none" stroke="#7b8795" stroke-width="2"/>
+                <circle r="70" fill="none" stroke="#2a3340" stroke-width="2" stroke-dasharray="4 10"/>
+                <circle r="55" fill="none" stroke="#2a3340" stroke-width="2" stroke-dasharray="4 10"/>
+                <circle r="38" fill="#2c3542"/>
+                <circle r="30" fill="url(#g2)"/>
+                <circle r="9" fill="#1e2733"/>
+                <g fill="#1e2733"><circle cx="0" cy="-20" r="4"/><circle cx="19" cy="-6" r="4"/><circle cx="12" cy="16" r="4"/><circle cx="-12" cy="16" r="4"/><circle cx="-19" cy="-6" r="4"/></g>
+                <path d="M-96 -18 a98 98 0 0 1 36 -80 l18 10 a78 78 0 0 0 -30 70z" fill="#c23b2b"/>
+              </g>
+              <!-- coil spring / shock -->
+              <g transform="translate(345 50) rotate(15)">
+                <rect x="-10" y="0" width="20" height="230" rx="8" fill="url(#g2)"/>
+                <rect x="-16" y="20" width="32" height="150" rx="10" fill="#2a3340"/>
+                <path d="M-30 30 q30 10 60 0 M-30 55 q30 10 60 0 M-30 80 q30 10 60 0 M-30 105 q30 10 60 0 M-30 130 q30 10 60 0 M-30 155 q30 10 60 0" stroke="#1a2029" stroke-width="7" stroke-linecap="round"/>
+                <path d="M-30 30 q30 10 60 0 M-30 55 q30 10 60 0 M-30 80 q30 10 60 0 M-30 105 q30 10 60 0 M-30 130 q30 10 60 0 M-30 155 q30 10 60 0" stroke="#4e5a69" stroke-width="3" stroke-linecap="round"/>
+                <circle cy="-6" r="13" fill="#3b4654"/><circle cy="238" r="13" fill="#3b4654"/>
+              </g>
+              <!-- gear -->
+              <g transform="translate(150 240)">
+                <g fill="url(#g2)"><circle r="42"/>
+                  <g id="tooth"><rect x="-8" y="-56" width="16" height="22" rx="3"/></g>
+                  <use href="#tooth" transform="rotate(45)"/><use href="#tooth" transform="rotate(90)"/><use href="#tooth" transform="rotate(135)"/><use href="#tooth" transform="rotate(180)"/><use href="#tooth" transform="rotate(225)"/><use href="#tooth" transform="rotate(270)"/><use href="#tooth" transform="rotate(315)"/>
+                </g>
+                <circle r="26" fill="#2a3340"/><circle r="12" fill="#9aa6b5"/>
+              </g>
+              <!-- oil filter -->
+              <g transform="translate(80 150)">
+                <rect x="-34" y="-52" width="68" height="104" rx="10" fill="url(#g3)"/>
+                <rect x="-34" y="-52" width="68" height="104" rx="10" fill="none" stroke="#a24d00" stroke-width="2"/>
+                <g stroke="#a24d00" stroke-width="2"><path d="M-26 -40 v80 M-14 -40 v80 M-2 -40 v80 M10 -40 v80 M22 -40 v80"/></g>
+                <ellipse cx="0" cy="-52" rx="34" ry="10" fill="#f6c285"/><circle cx="0" cy="-52" r="12" fill="#3b4654"/>
+              </g>
+              <!-- spark plugs -->
+              <g transform="translate(60 275) rotate(-30)">
+                <rect x="-6" y="-40" width="12" height="36" rx="3" fill="#e9eef3" stroke="#aab4c0"/>
+                <rect x="-9" y="-4" width="18" height="22" rx="3" fill="#6b7786"/>
+                <rect x="-3" y="18" width="6" height="18" fill="#3b4654"/>
+              </g>
+            </svg>
+          </div>
+          <div class="fn">
+            <h3>ฟังก์ชันหลัก</h3>
+            <ul class="checks">
+              <li>สินค้า หลายหน่วยนับ และบาร์โค้ด</li>
+              <li>จัดซื้อและรับสินค้าเข้าสต็อก</li>
+              <li>สต็อกแยกตามสถานที่เก็บ</li>
+              <li>ขายสินค้าและออกเอกสาร</li>
+              <li>ลูกหนี้ วางบิล และรับชำระ</li>
+              <li>รายงานสต็อก ยอดขาย และกำไร</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section white pricing" id="pricing">
+      <div class="container center">
+        <span class="badge">ราคาโปร่งใส เริ่มใช้งานได้ทันที</span>
+        <h2>แพ็กเกจมาตรฐานสำหรับร้านอะไหล่ยนต์</h2>
+        <p class="sub">ทดลองใช้งานฟรี <span data-cfg="trialDays">14</span> วัน โดยไม่มีการเรียกเก็บเงินอัตโนมัติ</p>
+        <div class="plans">
+          <div class="plan">
+            <h3>Starter</h3>
+            <div class="price">390 <small>บาท/เดือน</small></div>
+            <p class="muted">สำหรับร้านขนาดเล็ก เริ่มต้นจัดระบบสต็อก</p>
+            <ul>
+              <li>ผู้ใช้งาน 1 คน</li>
+              <li>สินค้า 1,000 รายการ</li>
+              <li>คลังสินค้า 1 แห่ง</li>
+              <li>ใบเสร็จ / ใบส่งของ</li>
+              <li>รายงานสต็อกและยอดขาย</li>
+            </ul>
+            <a class="btn btn-outline-blue btn-block" href="register.html?plan=starter">เริ่มทดลองใช้ฟรี</a>
+            <p class="note">ไม่ต้องใช้บัตรเครดิต</p>
+          </div>
+          <div class="plan hl">
+            <span class="pop">ยอดนิยม</span>
+            <h3>Standard</h3>
+            <div class="price">790 <small>บาท/เดือน</small></div>
+            <p class="muted">สำหรับร้านที่มีพนักงานหลายคนและหลายคลัง</p>
+            <ul>
+              <li>ผู้ใช้งาน 3 คน</li>
+              <li>สินค้า 10,000 รายการ</li>
+              <li>คลังสินค้า 3 แห่ง</li>
+              <li>ใบเสร็จ / ใบกำกับภาษี / ใบวางบิล</li>
+              <li>ลูกหนี้และรับชำระ</li>
+              <li>รายงานกำไรขั้นต้น</li>
+            </ul>
+            <a class="btn btn-orange btn-block" href="register.html?plan=standard">เริ่มทดลองใช้ฟรี</a>
+            <p class="note">ไม่ต้องใช้บัตรเครดิต</p>
+          </div>
+          <div class="plan">
+            <h3>Pro</h3>
+            <div class="price">1,490 <small>บาท/เดือน</small></div>
+            <p class="muted">สำหรับร้านค้าส่ง / หลายสาขา</p>
+            <ul>
+              <li>ผู้ใช้งานไม่จำกัด</li>
+              <li>สินค้าไม่จำกัด</li>
+              <li>คลังสินค้าไม่จำกัด</li>
+              <li>ทุกเอกสาร + กำหนดสิทธิ์ผู้ใช้</li>
+              <li>ส่งออก Excel / รายงานขั้นสูง</li>
+              <li>ซัพพอร์ตทาง LINE ก่อนใคร</li>
+            </ul>
+            <a class="btn btn-outline-blue btn-block" href="register.html?plan=pro">เริ่มทดลองใช้ฟรี</a>
+            <p class="note">ไม่ต้องใช้บัตรเครดิต</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="features">
+      <div class="container">
+        <div class="center" style="max-width:720px;margin:0 auto 34px">
+          <span class="badge">ครบทุกงานหน้าร้านและหลังร้าน</span>
+          <h2>ฟังก์ชันที่ออกแบบมาเพื่อร้านอะไหล่โดยเฉพาะ</h2>
+          <p class="muted">ไม่ใช่ระบบ POS ทั่วไป แต่คิดมาจากหน้างานจริง: หน่วยนับหลายแบบ เบอร์อะไหล่ รถที่ใช้ได้ และสต็อกที่กระจายอยู่หลายชั้นวาง</p>
+        </div>
+        <div class="features">
+          <div class="feat"><div class="ic">📦</div><h3>สินค้า หลายหน่วยนับ และบาร์โค้ด</h3><p>กำหนดหน่วยซื้อ-หน่วยขาย (เช่น กล่อง 12 ชิ้น) ผูกบาร์โค้ด เบอร์อะไหล่ เบอร์เทียบ และรุ่นรถที่ใช้ได้</p></div>
+          <div class="feat"><div class="ic">🏷️</div><h3>สต็อกแยกตามสถานที่เก็บ</h3><p>รู้ว่าของอยู่ที่คลังไหน ชั้นไหน โอนย้ายระหว่างคลัง และแจ้งเตือนเมื่อต่ำกว่าจุดสั่งซื้อ</p></div>
+          <div class="feat"><div class="ic">🛒</div><h3>จัดซื้อและรับสินค้าเข้าสต็อก</h3><p>เปิดใบสั่งซื้อถึงซัพพลายเออร์ รับของเข้าสต็อกเป็นบางส่วนหรือทั้งหมด ต้นทุนอัปเดตอัตโนมัติ</p></div>
+          <div class="feat"><div class="ic">🧾</div><h3>ขายสินค้าและออกเอกสาร</h3><p>ขายหน้าร้านด้วยบาร์โค้ด ออกใบเสร็จ ใบส่งของ ใบกำกับภาษี พิมพ์ได้ทันทีจากเบราว์เซอร์</p></div>
+          <div class="feat"><div class="ic">💳</div><h3>ลูกหนี้ วางบิล และรับชำระ</h3><p>ขายเชื่อให้ร้านซ่อม/อู่ เปิดใบวางบิลรวมหลายบิล บันทึกรับชำระ และดูยอดค้างแต่ละรายได้ทันที</p></div>
+          <div class="feat"><div class="ic">📊</div><h3>รายงานสต็อก ยอดขาย และกำไร</h3><p>มูลค่าสต็อก สินค้าใกล้หมด ยอดขายรายวัน/รายเดือน กำไรขั้นต้นต่อบิล และประวัติความเคลื่อนไหวทุกรายการ</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section white" id="how">
+      <div class="container">
+        <div class="center" style="margin-bottom:30px">
+          <h2>เริ่มใช้งานได้ใน 4 ขั้นตอน</h2>
+          <p class="muted">ใช้งานผ่านเบราว์เซอร์บนคอมพิวเตอร์ แท็บเล็ต หรือมือถือ ไม่ต้องติดตั้งโปรแกรม</p>
+        </div>
+        <div class="steps">
+          <div class="step"><div class="n">1</div><h3>สมัครใช้งาน</h3><p>กรอกชื่อร้านและอีเมล ระบบเปิดบัญชีทดลองให้ทันที</p></div>
+          <div class="step"><div class="n">2</div><h3>นำเข้าสินค้า</h3><p>เพิ่มสินค้าทีละรายการ หรือนำเข้าจาก Excel ทั้งหมดในครั้งเดียว</p></div>
+          <div class="step"><div class="n">3</div><h3>ตั้งยอดสต็อกเริ่มต้น</h3><p>นับของที่มีอยู่ ใส่ยอดยกมาแยกตามคลัง/ชั้นวาง</p></div>
+          <div class="step"><div class="n">4</div><h3>เริ่มซื้อ-ขาย</h3><p>เปิดบิลขาย รับของเข้า ดูรายงานได้แบบเรียลไทม์</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="faq">
+      <div class="container">
+        <h2 class="center" style="margin-bottom:24px">คำถามที่พบบ่อย</h2>
+        <div class="faq">
+          <details><summary>ทดลองใช้ฟรีแล้วจะถูกเรียกเก็บเงินอัตโนมัติไหม?</summary><p>ไม่ครับ เมื่อครบ <span data-cfg="trialDays">14</span> วัน ระบบจะแจ้งให้เลือกแพ็กเกจ หากไม่ชำระ บัญชีจะถูกพักไว้ ข้อมูลยังอยู่ 30 วัน ไม่มีการตัดเงินอัตโนมัติ</p></details>
+          <details><summary>ใช้กับเครื่องอ่านบาร์โค้ดและเครื่องพิมพ์ใบเสร็จได้ไหม?</summary><p>ได้ เครื่องอ่านบาร์โค้ดแบบ USB/Bluetooth ใช้ได้ทันที เอกสารพิมพ์ผ่านเบราว์เซอร์ได้ทั้งขนาด A4 และสลิป 80 มม.</p></details>
+          <details><summary>มีข้อมูลสินค้าอยู่ใน Excel แล้ว นำเข้าได้ไหม?</summary><p>ได้ ดาวน์โหลดไฟล์แม่แบบจากหน้า "สินค้า" แล้วอัปโหลดกลับ ระบบจะสร้างสินค้าและยอดสต็อกเริ่มต้นให้</p></details>
+          <details><summary>ข้อมูลปลอดภัยแค่ไหน?</summary><p>ข้อมูลแต่ละร้านแยกจากกัน เข้ารหัสระหว่างส่ง สำรองข้อมูลทุกวัน และส่งออกข้อมูลของร้านออกมาได้ตลอดเวลา</p></details>
+          <details><summary>ต้องเซ็นสัญญาระยะยาวไหม?</summary><p>ไม่ต้อง ชำระรายเดือน ยกเลิกได้ทุกเมื่อ หรือชำระรายปีลด 2 เดือน</p></details>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta">
+      <div class="container center">
+        <h2>พร้อมจัดระบบร้านอะไหล่ของคุณหรือยัง?</h2>
+        <p>ทดลองใช้ฟรี <span data-cfg="trialDays">14</span> วัน หรือทักมาคุยกับเราทาง LINE ได้เลย</p>
+        <div class="btns">
+          <a class="btn btn-orange" href="register.html">ทดลองใช้ฟรี <span data-cfg="trialDays">14</span> วัน</a>
+          <a class="btn btn-outline-white" data-cfg-href="lineUrl" href="#" target="_blank" rel="noopener">💬 ทักไลน์ <span data-cfg="line">jpnpart</span></a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div>
+        <h4>🔧 <span data-cfg="brand">JPN AUTOPARTS</span></h4>
+        <p><span data-cfg="tagline">ระบบบริหารงานร้านอะไหล่ยนต์ออนไลน์</span> — บริหารสินค้า สต็อก ซื้อ และขาย ในระบบเดียว ใช้งานได้ทันทีผ่านเบราว์เซอร์ ไม่ต้องติดตั้ง</p>
+      </div>
+      <div>
+        <h4>เมนู</h4>
+        <ul>
+          <li><a href="index.html#features">ฟังก์ชันหลัก</a></li>
+          <li><a href="index.html#pricing">แพ็กเกจ</a></li>
+          <li><a href="docs.html">คู่มือการใช้งาน</a></li>
+          <li><a href="login.html">เข้าสู่ระบบ</a></li>
+          <li><a href="register.html">สมัครใช้งาน</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>ติดต่อ</h4>
+        <ul>
+          <li>💬 LINE: <a data-cfg="line" data-cfg-href="lineUrl" href="#">jpnpart</a></li>
+          <li>📞 Mobile: <a data-cfg="mobile" data-cfg-attr="tel" href="#">08x-xxx-xxxx</a></li>
+          <li>✉️ Email: <a data-cfg="email" data-cfg-attr="mailto" href="#">sales@jpnpart.example</a></li>
+        </ul>
+      </div>
+      <div class="copy">© <span data-year>2026</span> <span data-cfg="brand">JPN AUTOPARTS</span>. All rights reserved.</div>
+    </div>
+  </footer>
+  <script src="assets/site.js"></script>
+</body>
+</html>
