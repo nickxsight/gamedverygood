@@ -1,102 +1,57 @@
-/* Pacific Radiators — small, dependency-free site script.
-   1. Fills every [data-cfg] element from window.SITE_CONFIG (site-config.js).
-   2. Mobile nav toggle.
-   3. Quote form: builds an email + SMS from the fields and shows confirmation.
-   4. Current year in footer, active nav link. */
+/* JPN AUTOPARTS — landing / auth script (no dependencies)
+   - fills [data-cfg] from site-config.js
+   - login / register forms -> session in localStorage -> app.html */
 (function () {
   var cfg = window.SITE_CONFIG || {};
+  var KEY_USERS = "jpn.users", KEY_SESSION = "jpn.session";
 
-  function get(path) {
-    return path.split(".").reduce(function (o, k) { return o == null ? undefined : o[k]; }, cfg);
-  }
-
-  // 1. Config injection --------------------------------------------------
-  document.querySelectorAll("[data-cfg]").forEach(function (el) {
-    var v = get(el.getAttribute("data-cfg"));
-    if (v == null) return;
+  document.querySelectorAll("[data-cfg], [data-cfg-href], [data-cfg-attr]").forEach(function (el) {
+    var key = el.getAttribute("data-cfg");
+    if (key && cfg[key] != null) el.textContent = cfg[key];
+    var hrefKey = el.getAttribute("data-cfg-href");
+    if (hrefKey && cfg[hrefKey]) el.setAttribute("href", cfg[hrefKey]);
     var attr = el.getAttribute("data-cfg-attr");
-    if (attr === "tel") el.setAttribute("href", "tel:" + get("phoneRaw"));
-    else if (attr === "sms") el.setAttribute("href", "sms:" + get("smsRaw"));
-    else if (attr === "mailto") el.setAttribute("href", "mailto:" + v);
-    else if (attr) el.setAttribute(attr, v);
-    else el.textContent = v;
+    if (attr === "tel") el.setAttribute("href", "tel:" + cfg.mobileRaw);
+    if (attr === "mailto") el.setAttribute("href", "mailto:" + cfg.email);
   });
-
-  // Locations (rendered from config so both pages share one source)
-  var locs = get("locations") || [];
-  document.querySelectorAll("[data-locations]").forEach(function (wrap) {
-    wrap.innerHTML = locs.map(function (l) {
-      var maps = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(l.mapQuery || (l.address1 + " " + l.address2));
-      return (
-        '<div class="loc-card">' +
-          '<span class="eyebrow">' + l.label + "</span>" +
-          "<address>" + l.address1 + "<br>" + l.address2 + "</address>" +
-          '<p class="note">' + l.note + "</p>" +
-          '<ul class="hours-list"><li>' + get("hours.weekdays") + "</li><li>" + get("hours.saturday") + "</li><li>" + get("hours.sunday") + "</li></ul>" +
-          '<div class="loc-actions">' +
-            '<a class="btn btn-dark" href="' + maps + '" target="_blank" rel="noopener">Get Directions</a>' +
-            '<a class="btn btn-ghost" href="tel:' + get("phoneRaw") + '">Call ' + get("phone") + "</a>" +
-          "</div>" +
-        "</div>"
-      );
-    }).join("");
-  });
-
-  var areas = get("serviceAreas") || [];
-  document.querySelectorAll("[data-areas]").forEach(function (wrap) {
-    wrap.innerHTML = areas.map(function (a) { return '<span class="chip">' + a + "</span>"; }).join("");
-  });
-
-  // 2. Mobile nav -----------------------------------------------------------
-  var toggle = document.querySelector(".nav-toggle");
-  var nav = document.querySelector(".nav");
-  if (toggle && nav) {
-    toggle.addEventListener("click", function () {
-      var open = nav.classList.toggle("open");
-      toggle.setAttribute("aria-expanded", open ? "true" : "false");
-    });
-    nav.addEventListener("click", function (e) {
-      if (e.target.tagName === "A") { nav.classList.remove("open"); toggle.setAttribute("aria-expanded", "false"); }
-    });
-  }
-
-  // 3. Quote form -----------------------------------------------------------
-  var form = document.getElementById("quote-form");
-  if (form) {
-    form.addEventListener("submit", function (e) {
-      e.preventDefault();
-      var d = new FormData(form);
-      var lines = [
-        "Quote request — " + (d.get("year") || "") + " " + (d.get("make") || "") + " " + (d.get("model") || ""),
-        "Part: " + (d.get("part") || ""),
-        "Engine / trim: " + (d.get("engine") || "-"),
-        "Pickup / delivery: " + (d.get("location") || "-"),
-        "Name: " + (d.get("name") || "-"),
-        "Phone: " + (d.get("phone") || "-"),
-        "Notes: " + (d.get("notes") || "-"),
-      ];
-      var body = lines.join("\n");
-      var subject = "Quote: " + (d.get("year") || "") + " " + (d.get("make") || "") + " " + (d.get("model") || "") + " " + (d.get("part") || "");
-      var mail = "mailto:" + get("email") + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
-      var sms = "sms:" + get("smsRaw") + "?&body=" + encodeURIComponent(body);
-
-      var ok = form.querySelector(".form-success");
-      ok.innerHTML =
-        "Thanks! Your request is ready to send. " +
-        '<a href="' + mail + '">Send by email</a> or <a href="' + sms + '">text it to us</a> ' +
-        "and we’ll reply with pricing and availability within business hours.";
-      ok.classList.add("show");
-      ok.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      // Open the email client by default.
-      window.location.href = mail;
-    });
-  }
-
-  // 4. Misc -------------------------------------------------------------------
   document.querySelectorAll("[data-year]").forEach(function (el) { el.textContent = new Date().getFullYear(); });
-  var here = location.pathname.split("/").pop() || "index.html";
-  document.querySelectorAll(".nav a").forEach(function (a) {
-    var href = a.getAttribute("href") || "";
-    if (href === here || (here === "index.html" && href === "index.html")) a.setAttribute("aria-current", "page");
-  });
+
+  function load(k, d) { try { return JSON.parse(localStorage.getItem(k)) || d; } catch (e) { return d; } }
+  function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  function showErr(form, msg) { var e = form.querySelector(".form-error"); e.textContent = msg; e.classList.add("show"); }
+
+  var login = document.getElementById("login-form");
+  if (login) {
+    login.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var email = login.email.value.trim().toLowerCase(), pw = login.password.value;
+      if (!email || !pw) return showErr(login, "กรุณากรอกอีเมลและรหัสผ่าน");
+      var users = load(KEY_USERS, {});
+      var u = users[email];
+      if (email === "demo@shop.test" && pw === "demo1234") u = { shop: "ร้านอะไหล่ตัวอย่าง (Demo)", name: "ผู้ทดลองใช้", email: email, plan: "standard", trialEnd: Date.now() + 14 * 864e5, demo: true };
+      if (!u || (u.password && u.password !== pw)) return showErr(login, "อีเมลหรือรหัสผ่านไม่ถูกต้อง");
+      save(KEY_SESSION, { shop: u.shop, name: u.name, email: u.email, plan: u.plan, trialEnd: u.trialEnd, demo: !!u.demo });
+      location.href = "app.html";
+    });
+  }
+
+  var reg = document.getElementById("register-form");
+  if (reg) {
+    var planParam = new URLSearchParams(location.search).get("plan");
+    if (planParam && reg.plan.querySelector('option[value="' + planParam + '"]')) reg.plan.value = planParam;
+    reg.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var f = reg;
+      if (!f.shop.value.trim() || !f.name.value.trim() || !f.email.value.trim()) return showErr(f, "กรุณากรอกชื่อร้าน ชื่อผู้ติดต่อ และอีเมล");
+      if (f.password.value.length < 6) return showErr(f, "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร");
+      var email = f.email.value.trim().toLowerCase();
+      var users = load(KEY_USERS, {});
+      if (users[email]) return showErr(f, "อีเมลนี้สมัครไว้แล้ว กรุณาเข้าสู่ระบบ");
+      var days = parseInt(cfg.trialDays || "14", 10);
+      var u = { shop: f.shop.value.trim(), name: f.name.value.trim(), phone: f.phone.value.trim(), email: email, password: f.password.value, plan: f.plan.value, trialEnd: Date.now() + days * 864e5, createdAt: Date.now() };
+      users[email] = u; save(KEY_USERS, users);
+      save(KEY_SESSION, { shop: u.shop, name: u.name, email: u.email, plan: u.plan, trialEnd: u.trialEnd, demo: false, fresh: true });
+      location.href = "app.html";
+    });
+  }
 })();

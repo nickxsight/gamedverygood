@@ -1,27 +1,27 @@
-# Pacific Radiators — auto parts brochure site
+# JPN AUTOPARTS — ระบบบริหารร้านอะไหล่ยนต์ (SaaS landing + demo app)
 
-A static, dependency-free marketing site for a wholesale radiator / A/C condenser
-supplier, modelled on the structure of ipsautoparts.com (I.P.S. Radiators):
+เว็บไซต์แบบ static ไม่ต้อง build จำลองเว็บ SaaS ระบบบริหารร้านอะไหล่ยนต์:
 
-- `index.html` — hero + instant quote form (year / make / model / part), stats,
-  products, brands (featured Koyo + KATO, logo strip), services, why-us,
-  delivery areas, locations & hours, CTA band, footer
-- `about.html` — story, timeline, values, locations
-- `privacy.html` — privacy policy incl. CCPA section
-- `site-config.js` — **edit this one file** to change the business name, phone,
-  email, hours, addresses and delivery areas; every `data-cfg` element is filled
-  from it at load time
-- `assets/styles.css`, `assets/site.js`, `assets/favicon.svg`
+| ไฟล์ | หน้า |
+| --- | --- |
+| `index.html` | หน้าแรก: hero + ฟังก์ชันหลัก, แพ็กเกจ/ราคา, ฟีเจอร์, ขั้นตอนเริ่มใช้, FAQ, ติดต่อ (LINE / โทร / อีเมล) |
+| `login.html`, `register.html` | เข้าสู่ระบบ / สมัครทดลองใช้ 14 วัน (บัญชีเก็บใน localStorage) |
+| `docs.html` | คู่มือการใช้งาน |
+| `app.html` | ตัวระบบ (demo): แดชบอร์ด, สินค้า (หลายหน่วยนับ+บาร์โค้ด, นำเข้า CSV), สต็อกแยกคลัง + ประวัติความเคลื่อนไหว, จัดซื้อ/รับสินค้า, ขาย + พิมพ์ใบเสร็จ/ใบกำกับภาษี, ลูกหนี้/ใบวางบิล/รับชำระ, รายงาน, ซัพพลายเออร์/ลูกค้า, ตั้งค่า |
+| `site-config.js` | **แก้ไฟล์นี้ไฟล์เดียว** เพื่อเปลี่ยนชื่อแบรนด์, LINE, เบอร์โทร, อีเมล |
 
-No build step. Open `index.html` directly, or serve the folder:
+## ใช้งาน
 
 ```bash
-npx serve autoparts-site        # or: python3 -m http.server -d autoparts-site 8080
+npx serve autoparts-site          # หรือ python3 -m http.server -d autoparts-site 8080
 ```
 
-The quote form has no backend: on submit it composes an email (and offers an SMS
-link) with the vehicle and part details. Point it at a real endpoint by replacing
-the submit handler in `assets/site.js`.
+บัญชีทดลองที่มีข้อมูลตัวอย่าง: `demo@shop.test` / `demo1234`
+หรือกด "สมัครใช้งาน" เพื่อเริ่มจากร้านว่าง
 
-Brand name, phone numbers and addresses are placeholders — replace them in
-`site-config.js` before going live.
+## หมายเหตุ
+
+- ข้อมูลทั้งหมดเก็บใน `localStorage` ของเบราว์เซอร์ (แยกตามอีเมลผู้ใช้) — เป็น demo frontend-only
+  ต้องการใช้งานจริงให้เปลี่ยน `save()/load()` ใน `assets/app.js` ไปเรียก API ของ backend
+- เอกสารพิมพ์ผ่าน `window.print()` (CSS `@media print` ใน `assets/app.css`)
+- ชื่อแบรนด์และช่องทางติดต่อใน `site-config.js` เป็นค่า placeholder

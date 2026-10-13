@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#1b3a63" />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/styles.css" />
+  <script src="site-config.js"></script>
+  <title>คู่มือการใช้งาน | JPN AUTOPARTS</title>
+  <meta name="description" content="คู่มือการใช้งานระบบบริหารร้านอะไหล่ยนต์: สินค้า สต็อก จัดซื้อ ขาย ลูกหนี้ รายงาน" />
+  <meta property="og:title" content="คู่มือการใช้งาน | JPN AUTOPARTS" />
+  <meta property="og:description" content="คู่มือการใช้งานระบบบริหารร้านอะไหล่ยนต์: สินค้า สต็อก จัดซื้อ ขาย ลูกหนี้ รายงาน" />
+</head>
+<body>
+  <header class="header">
+    <div class="container">
+      <a class="brand" href="index.html"><span class="ic">🔧</span> <span data-cfg="brand">JPN AUTOPARTS</span></a>
+      <div class="header-actions">
+        <a class="btn btn-outline-white" href="login.html">เข้าสู่ระบบ</a>
+        <a class="btn btn-orange" href="register.html">สมัครใช้งาน</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container docs">
+    <nav aria-label="สารบัญ">
+      <a href="#start">เริ่มต้นใช้งาน</a>
+      <a href="#products">สินค้าและหน่วยนับ</a>
+      <a href="#stock">สต็อกและสถานที่เก็บ</a>
+      <a href="#purchase">จัดซื้อและรับสินค้า</a>
+      <a href="#sales">ขายและออกเอกสาร</a>
+      <a href="#ar">ลูกหนี้ วางบิล รับชำระ</a>
+      <a href="#reports">รายงาน</a>
+      <a href="#faq">ปัญหาที่พบบ่อย</a>
+    </nav>
+    <article>
+      <h2 id="start">เริ่มต้นใช้งาน</h2>
+      <p>ระบบทำงานบนเบราว์เซอร์ (Chrome, Safari, Edge) ทั้งบนคอมพิวเตอร์ แท็บเล็ต และมือถือ ไม่ต้องติดตั้งโปรแกรม</p>
+      <ol>
+        <li>กด <strong>สมัครใช้งาน</strong> กรอกชื่อร้าน ผู้ติดต่อ อีเมล และรหัสผ่าน ระบบเปิดบัญชีทดลอง <span data-cfg="trialDays">14</span> วันให้ทันที</li>
+        <li>เข้าสู่ระบบ แล้วไปที่ <strong>ตั้งค่า</strong> เพื่อใส่ชื่อร้าน ที่อยู่ และเลขผู้เสียภาษี (จะไปแสดงบนเอกสาร)</li>
+        <li>เพิ่ม <strong>สถานที่เก็บ</strong> (คลังหลัก, หน้าร้าน, ชั้น A1 ฯลฯ)</li>
+        <li>เพิ่มสินค้าและตั้งยอดสต็อกเริ่มต้น</li>
+      </ol>
+      <div class="tip">💡 อยากลองก่อนสมัคร? เข้าสู่ระบบด้วย <code>demo@shop.test</code> / <code>demo1234</code> จะมีสินค้า ซัพพลายเออร์ ลูกค้า และบิลตัวอย่างให้เล่นได้เลย</div>
+
+      <h2 id="products">สินค้าและหน่วยนับ</h2>
+      <h3>เพิ่มสินค้า</h3>
+      <p>เมนู <strong>สินค้า → + เพิ่มสินค้า</strong> กรอกรหัสสินค้า ชื่อ บาร์โค้ด หมวดหมู่ เบอร์อะไหล่ รุ่นรถที่ใช้ได้ ต้นทุน ราคาขาย และจุดสั่งซื้อ</p>
+      <h3>หลายหน่วยนับ</h3>
+      <p>ตั้ง <strong>หน่วยหลัก</strong> (หน่วยที่นับสต็อก เช่น ชิ้น) และ <strong>หน่วยแพ็ก</strong> พร้อมอัตราแปลง เช่น 1 กล่อง = 12 ชิ้น เวลาซื้อหรือขายเลือกได้ว่าจะคิดเป็นหน่วยไหน ระบบแปลงเป็นหน่วยหลักให้อัตโนมัติ</p>
+      <h3>บาร์โค้ด</h3>
+      <p>ช่องค้นหาในหน้าขายและรับสินค้ารองรับเครื่องอ่านบาร์โค้ด ยิงบาร์โค้ดแล้วรายการจะถูกเพิ่มทันที</p>
+
+      <h2 id="stock">สต็อกและสถานที่เก็บ</h2>
+      <p>เมนู <strong>สต็อก</strong> แสดงจำนวนคงเหลือของสินค้าแต่ละรายการแยกตามสถานที่เก็บ</p>
+      <ul>
+        <li><strong>ปรับยอด</strong> — ใช้ตอนนับสต็อกหรือตั้งยอดยกมา ระบุคลัง จำนวนใหม่ และเหตุผล</li>
+        <li><strong>โอนย้าย</strong> — ย้ายของระหว่างคลัง เช่น จากคลังหลักมาหน้าร้าน</li>
+        <li><strong>ประวัติความเคลื่อนไหว</strong> — ทุกการรับเข้า ขายออก ปรับยอด และโอนย้าย ถูกบันทึกพร้อมวันเวลา เอกสารอ้างอิง และผู้ทำรายการ</li>
+      </ul>
+      <p>สินค้าที่ต่ำกว่า <strong>จุดสั่งซื้อ</strong> จะขึ้นสีส้มในหน้าสต็อกและปรากฏในแดชบอร์ด</p>
+
+      <h2 id="purchase">จัดซื้อและรับสินค้า</h2>
+      <ol>
+        <li>เมนู <strong>จัดซื้อ → + ใบสั่งซื้อ</strong> เลือกซัพพลายเออร์ เพิ่มรายการสินค้า จำนวน หน่วย และราคาซื้อ</li>
+        <li>บันทึก ใบสั่งซื้อจะอยู่ในสถานะ <em>รอรับของ</em></li>
+        <li>เมื่อของมาถึง กด <strong>รับสินค้า</strong> เลือกคลังที่จะเก็บ ระบบเพิ่มสต็อกและอัปเดตต้นทุนล่าสุดให้</li>
+      </ol>
+
+      <h2 id="sales">ขายและออกเอกสาร</h2>
+      <ol>
+        <li>เมนู <strong>ขาย → + เปิดบิล</strong> เลือกลูกค้า (หรือ "ลูกค้าทั่วไป") และคลังที่ตัดสต็อก</li>
+        <li>ค้นหาสินค้าด้วยชื่อ รหัส หรือยิงบาร์โค้ด ปรับจำนวน หน่วย และราคาได้ต่อรายการ</li>
+        <li>เลือกการชำระ <strong>เงินสด / โอน</strong> (ชำระทันที) หรือ <strong>เครดิต</strong> (ตั้งเป็นลูกหนี้)</li>
+        <li>บันทึกแล้วกด <strong>พิมพ์</strong> เพื่อออกใบเสร็จ / ใบส่งของ / ใบกำกับภาษี</li>
+      </ol>
+
+      <h2 id="ar">ลูกหนี้ วางบิล รับชำระ</h2>
+      <p>บิลที่ขายแบบเครดิตจะรวมอยู่ในเมนู <strong>ลูกหนี้</strong> แยกตามลูกค้า</p>
+      <ul>
+        <li><strong>ใบวางบิล</strong> — เลือกบิลค้างชำระหลายใบของลูกค้ารายเดียวกัน ออกเป็นใบวางบิลหนึ่งฉบับเพื่อส่งให้ลูกค้า</li>
+        <li><strong>รับชำระ</strong> — บันทึกยอดที่รับ (เงินสด/โอน/เช็ค) ระบบตัดยอดค้างของบิลให้</li>
+      </ul>
+
+      <h2 id="reports">รายงาน</h2>
+      <ul>
+        <li><strong>มูลค่าสต็อก</strong> — จำนวน × ต้นทุน แยกตามคลังและหมวดหมู่</li>
+        <li><strong>สินค้าใกล้หมด</strong> — รายการที่ต่ำกว่าจุดสั่งซื้อ</li>
+        <li><strong>ยอดขาย</strong> — รายวัน / รายเดือน แยกเงินสดและเครดิต</li>
+        <li><strong>กำไรขั้นต้น</strong> — ราคาขาย − ต้นทุน ต่อบิลและต่อสินค้า</li>
+        <li><strong>สินค้าขายดี</strong> — จัดอันดับตามจำนวนและยอดเงิน</li>
+      </ul>
+
+      <h2 id="faq">ปัญหาที่พบบ่อย</h2>
+      <h3>พิมพ์เอกสารแล้วหน้าตัด</h3>
+      <p>ในหน้าต่างพิมพ์ของเบราว์เซอร์ เลือกขนาดกระดาษ A4 หรือ 80 มม. ให้ตรงกับเครื่องพิมพ์ และปิด "Headers and footers"</p>
+      <h3>ยิงบาร์โค้ดแล้วไม่ขึ้น</h3>
+      <p>ตรวจว่าเคอร์เซอร์อยู่ในช่องค้นหาสินค้า และบาร์โค้ดนั้นถูกผูกไว้กับสินค้าในหน้า "สินค้า" แล้ว</p>
+      <h3>ลืมรหัสผ่าน</h3>
+      <p>ติดต่อทีมงานทาง LINE <span data-cfg="line">jpnpart</span> เพื่อรีเซ็ตรหัสผ่าน</p>
+    </article>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div>
+        <h4>🔧 <span data-cfg="brand">JPN AUTOPARTS</span></h4>
+        <p><span data-cfg="tagline">ระบบบริหารงานร้านอะไหล่ยนต์ออนไลน์</span> — บริหารสินค้า สต็อก ซื้อ และขาย ในระบบเดียว ใช้งานได้ทันทีผ่านเบราว์เซอร์ ไม่ต้องติดตั้ง</p>
+      </div>
+      <div>
+        <h4>เมนู</h4>
+        <ul>
+          <li><a href="index.html#features">ฟังก์ชันหลัก</a></li>
+          <li><a href="index.html#pricing">แพ็กเกจ</a></li>
+          <li><a href="docs.html">คู่มือการใช้งาน</a></li>
+          <li><a href="login.html">เข้าสู่ระบบ</a></li>
+          <li><a href="register.html">สมัครใช้งาน</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>ติดต่อ</h4>
+        <ul>
+          <li>💬 LINE: <a data-cfg="line" data-cfg-href="lineUrl" href="#">jpnpart</a></li>
+          <li>📞 Mobile: <a data-cfg="mobile" data-cfg-attr="tel" href="#">08x-xxx-xxxx</a></li>
+          <li>✉️ Email: <a data-cfg="email" data-cfg-attr="mailto" href="#">sales@jpnpart.example</a></li>
+        </ul>
+      </div>
+      <div class="copy">© <span data-year>2026</span> <span data-cfg="brand">JPN AUTOPARTS</span>. All rights reserved.</div>
+    </div>
+  </footer>
+  <script src="assets/site.js"></script>
+</body>
+</html>
