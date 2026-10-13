@@ -19,6 +19,16 @@ npx serve autoparts-site          # หรือ python3 -m http.server -d autop
 บัญชีทดลองที่มีข้อมูลตัวอย่าง: `demo@shop.test` / `demo1234`
 หรือกด "สมัครใช้งาน" เพื่อเริ่มจากร้านว่าง
 
+## Deploy (GitHub Pages)
+
+ไซต์เผยแพร่จาก branch `gh-pages` (เนื้อหาโฟลเดอร์นี้อยู่ที่ root ของ branch):
+
+```bash
+git subtree push --prefix autoparts-site origin gh-pages
+```
+
+URL: https://nickxsight.github.io/gamedverygood/
+
 ## หมายเหตุ
 
 - ข้อมูลทั้งหมดเก็บใน `localStorage` ของเบราว์เซอร์ (แยกตามอีเมลผู้ใช้) — เป็น demo frontend-only
