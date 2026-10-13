@@ -1,404 +1,265 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#0f1f3d" />
+  <meta name="theme-color" content="#1b3a63" />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="assets/styles.css" />
   <script src="site-config.js"></script>
-  <title>Pacific Radiators — Your Reliable Source for Radiators &amp; Condensers</title>
-  <meta name="description" content="Wholesale radiators, A/C condensers and cooling parts for repair shops, body shops and dealerships in Los Angeles. Same-day local delivery, nationwide shipping, trade pricing. Trusted since 1997." />
-  <meta property="og:title" content="Pacific Radiators — Your Reliable Source for Radiators &amp; Condensers" />
-  <meta property="og:description" content="Wholesale radiators, A/C condensers and cooling parts for repair shops, body shops and dealerships in Los Angeles. Same-day local delivery, nationwide shipping, trade pricing. Trusted since 1997." />
-  <meta property="og:type" content="website" />
+  <title>ระบบบริหารร้านอะไหล่ยนต์ | JPN AUTOPARTS</title>
+  <meta name="description" content="ระบบร้านอะไหล่ยนต์แบบ SaaS บริหารสินค้า สต็อก ซื้อ และขาย ในระบบเดียว ทดลองใช้ฟรี 14 วัน" />
+  <meta property="og:title" content="ระบบบริหารร้านอะไหล่ยนต์ | JPN AUTOPARTS" />
+  <meta property="og:description" content="ระบบร้านอะไหล่ยนต์แบบ SaaS บริหารสินค้า สต็อก ซื้อ และขาย ในระบบเดียว ทดลองใช้ฟรี 14 วัน" />
 </head>
 <body>
-  <div class="topbar">
-    <div class="container">
-      <div class="hours">
-        <span data-cfg="hours.weekdays">Mon – Fri: 8:00 AM – 5:00 PM</span>
-        <span data-cfg="hours.saturday">Saturday: 8:00 AM – 1:00 PM</span>
-        <span data-cfg="hours.sunday">Sunday: Closed</span>
-      </div>
-      <div>Trade pricing for shops &amp; dealers · <a data-cfg="phone" data-cfg-attr="tel" href="tel:+16265550147">(626) 555-0147</a></div>
-    </div>
-  </div>
-
   <header class="header">
     <div class="container">
-      <a class="brand" href="index.html" aria-label="Home">
-        <span class="brand-mark" aria-hidden="true">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 5v14M11 5v14M15 5v14M19 5v14" opacity=".55"/><path d="M3 12h18"/></svg>
-        </span>
-        <span class="brand-text">
-          <strong data-cfg="name">Pacific Radiators</strong>
-          <span>Radiators · Condensers · Cooling</span>
-        </span>
-      </a>
-
-      <button class="nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="main-nav">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
-      </button>
-
-      <nav class="nav" id="main-nav" aria-label="Main">
-        <a href="index.html">Home</a>
-        <a href="index.html#products">Products</a>
-        <a href="index.html#brands">Brands</a>
-        <a href="index.html#services">Services</a>
-        <a href="about.html">About</a>
-        <a href="index.html#locations">Locations</a>
-        <a href="index.html#contact">Contact</a>
-      </nav>
-
-      <div class="header-cta">
-        <a class="header-phone" data-cfg="phone" data-cfg-attr="tel" href="tel:+16265550147">(626) 555-0147</a>
-        <a class="btn btn-primary" href="index.html#quote">Get a Quote</a>
+      <a class="brand" href="index.html"><span class="ic">🔧</span> <span data-cfg="brand">JPN AUTOPARTS</span></a>
+      <div class="header-actions">
+        <a class="btn btn-outline-white" href="login.html">เข้าสู่ระบบ</a>
+        <a class="btn btn-orange" href="register.html">สมัครใช้งาน</a>
       </div>
     </div>
   </header>
 
   <main>
-    <!-- Hero + quote form -->
-    <section class="hero" id="quote">
+    <section class="hero">
       <div class="container">
         <div>
-          <span class="hero-badge"><i></i> Trusted since <span data-cfg="since">1997</span> · Los Angeles</span>
-          <h1>Your Reliable Source for <span>Radiators &amp; Condensers</span></h1>
-          <p class="lead">Wholesale cooling parts for repair shops, body shops and dealerships. Deep stock, trade pricing, and same-day delivery across the San Gabriel Valley and South Bay.</p>
+          <span class="badge">ระบบร้านอะไหล่ยนต์แบบ SaaS</span>
+          <h1>บริหารสินค้า สต็อก ซื้อ และขาย<br>ในระบบเดียว</h1>
+          <p class="lead"><span data-cfg="brand">JPN AUTOPARTS</span> ช่วยให้ร้านอะไหล่ตรวจสอบสต็อก รับสินค้า และขายสินค้าได้รวดเร็ว พร้อมประวัติความเคลื่อนไหวที่ตรวจสอบย้อนหลังได้</p>
           <div class="hero-actions">
-            <a class="btn btn-primary" data-cfg="phone" data-cfg-attr="tel" href="tel:+16265550147">Call for Pricing</a>
-            <a class="btn btn-outline" data-cfg="smsRaw" data-cfg-attr="sms" href="sms:+16265550147">Text a Quote</a>
+            <a class="btn btn-orange" href="register.html">ทดลองใช้ฟรี <span data-cfg="trialDays">14</span> วัน</a>
+            <a class="btn btn-outline-blue" href="login.html">เข้าสู่ระบบ</a>
+            <a class="btn btn-outline" href="docs.html">คู่มือการใช้งาน</a>
           </div>
-          <ul class="hero-points">
-            <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Official Koyo Distributor</li>
-            <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Same-day local delivery</li>
-            <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Nationwide shipping</li>
-            <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Bulk pricing for shops</li>
-          </ul>
+          <div class="contact-card">
+            <h3>ติดต่อสอบถามและทดลองใช้งาน</h3>
+            <div class="contact-row">
+              <a class="btn btn-green btn-sm" data-cfg-href="lineUrl" href="#" target="_blank" rel="noopener">💬 LINE: <span data-cfg="line">jpnpart</span></a>
+              <a class="btn btn-outline-blue btn-sm" data-cfg-attr="tel" href="#">📞 Mobile: <span data-cfg="mobile">08x-xxx-xxxx</span></a>
+            </div>
+            <a class="email" data-cfg-attr="mailto" href="#">✉️ Email: <span data-cfg="email">sales@jpnpart.example</span></a>
+          </div>
         </div>
 
-        <form class="quote-card" id="quote-form" novalidate>
-          <h2>Get an Instant Quote</h2>
-          <p class="muted">Tell us the vehicle and the part. We reply with price and availability during business hours.</p>
-          <div class="form-grid">
-            <div class="field">
-              <label for="q-year">Year</label>
-              <input id="q-year" name="year" inputmode="numeric" placeholder="2018" required />
+        <div class="hero-card">
+          <div class="hero-banner">
+            <div class="txt">
+              <span class="t1" data-cfg="brandShort">JPN</span>
+              <span class="t2" data-cfg="brandRest">AUTOPARTS</span>
+              <div class="t3" data-cfg="tagline">ระบบบริหารงานร้านอะไหล่ยนต์ออนไลน์</div>
             </div>
-            <div class="field">
-              <label for="q-make">Make</label>
-              <input id="q-make" name="make" placeholder="Toyota" required />
-            </div>
-            <div class="field">
-              <label for="q-model">Model</label>
-              <input id="q-model" name="model" placeholder="Camry" required />
-            </div>
-            <div class="field">
-              <label for="q-engine">Engine / Trim</label>
-              <input id="q-engine" name="engine" placeholder="2.5L, LE" />
-            </div>
-            <div class="field">
-              <label for="q-part">Part Type</label>
-              <select id="q-part" name="part" required>
-                <option value="">Select a part…</option>
-                <option>Radiator</option>
-                <option>A/C Condenser</option>
-                <option>Radiator + Condenser</option>
-                <option>Cooling Fan Assembly</option>
-                <option>Brake Pads / Rotors</option>
-                <option>Alternator</option>
-                <option>Starter</option>
-                <option>Other</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="q-loc">Pickup / Delivery</label>
-              <select id="q-loc" name="location">
-                <option>Deliver to my shop</option>
-                <option>Pickup — El Monte</option>
-                <option>Pickup — Gardena (by appointment)</option>
-                <option>Ship nationwide</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="q-name">Name / Shop</label>
-              <input id="q-name" name="name" placeholder="Shop name" autocomplete="organization" />
-            </div>
-            <div class="field">
-              <label for="q-phone">Phone</label>
-              <input id="q-phone" name="phone" type="tel" placeholder="(626) 000-0000" autocomplete="tel" />
-            </div>
-            <div class="field full">
-              <label for="q-notes">Notes (optional)</label>
-              <textarea id="q-notes" name="notes" placeholder="VIN, quantity, OEM part number…"></textarea>
-            </div>
-            <div class="full">
-              <button class="btn btn-primary btn-block" type="submit">Request Quote</button>
-            </div>
+            <!-- stylised parts illustration: brake disc, coil spring, gear, spark plug -->
+            <svg class="parts" viewBox="0 0 400 320" fill="none" aria-hidden="true">
+              <defs>
+                <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4a5566"/><stop offset="1" stop-color="#1e2733"/></linearGradient>
+                <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9aa6b5"/><stop offset="1" stop-color="#5d6a7a"/></linearGradient>
+                <linearGradient id="g3" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffb366"/><stop offset="1" stop-color="#d96a00"/></linearGradient>
+              </defs>
+              <!-- brake disc -->
+              <g transform="translate(250 120)">
+                <circle r="92" fill="url(#g1)"/>
+                <circle r="92" fill="none" stroke="#7b8795" stroke-width="2"/>
+                <circle r="70" fill="none" stroke="#2a3340" stroke-width="2" stroke-dasharray="4 10"/>
+                <circle r="55" fill="none" stroke="#2a3340" stroke-width="2" stroke-dasharray="4 10"/>
+                <circle r="38" fill="#2c3542"/>
+                <circle r="30" fill="url(#g2)"/>
+                <circle r="9" fill="#1e2733"/>
+                <g fill="#1e2733"><circle cx="0" cy="-20" r="4"/><circle cx="19" cy="-6" r="4"/><circle cx="12" cy="16" r="4"/><circle cx="-12" cy="16" r="4"/><circle cx="-19" cy="-6" r="4"/></g>
+                <path d="M-96 -18 a98 98 0 0 1 36 -80 l18 10 a78 78 0 0 0 -30 70z" fill="#c23b2b"/>
+              </g>
+              <!-- coil spring / shock -->
+              <g transform="translate(345 50) rotate(15)">
+                <rect x="-10" y="0" width="20" height="230" rx="8" fill="url(#g2)"/>
+                <rect x="-16" y="20" width="32" height="150" rx="10" fill="#2a3340"/>
+                <path d="M-30 30 q30 10 60 0 M-30 55 q30 10 60 0 M-30 80 q30 10 60 0 M-30 105 q30 10 60 0 M-30 130 q30 10 60 0 M-30 155 q30 10 60 0" stroke="#1a2029" stroke-width="7" stroke-linecap="round"/>
+                <path d="M-30 30 q30 10 60 0 M-30 55 q30 10 60 0 M-30 80 q30 10 60 0 M-30 105 q30 10 60 0 M-30 130 q30 10 60 0 M-30 155 q30 10 60 0" stroke="#4e5a69" stroke-width="3" stroke-linecap="round"/>
+                <circle cy="-6" r="13" fill="#3b4654"/><circle cy="238" r="13" fill="#3b4654"/>
+              </g>
+              <!-- gear -->
+              <g transform="translate(150 240)">
+                <g fill="url(#g2)"><circle r="42"/>
+                  <g id="tooth"><rect x="-8" y="-56" width="16" height="22" rx="3"/></g>
+                  <use href="#tooth" transform="rotate(45)"/><use href="#tooth" transform="rotate(90)"/><use href="#tooth" transform="rotate(135)"/><use href="#tooth" transform="rotate(180)"/><use href="#tooth" transform="rotate(225)"/><use href="#tooth" transform="rotate(270)"/><use href="#tooth" transform="rotate(315)"/>
+                </g>
+                <circle r="26" fill="#2a3340"/><circle r="12" fill="#9aa6b5"/>
+              </g>
+              <!-- oil filter -->
+              <g transform="translate(80 150)">
+                <rect x="-34" y="-52" width="68" height="104" rx="10" fill="url(#g3)"/>
+                <rect x="-34" y="-52" width="68" height="104" rx="10" fill="none" stroke="#a24d00" stroke-width="2"/>
+                <g stroke="#a24d00" stroke-width="2"><path d="M-26 -40 v80 M-14 -40 v80 M-2 -40 v80 M10 -40 v80 M22 -40 v80"/></g>
+                <ellipse cx="0" cy="-52" rx="34" ry="10" fill="#f6c285"/><circle cx="0" cy="-52" r="12" fill="#3b4654"/>
+              </g>
+              <!-- spark plugs -->
+              <g transform="translate(60 275) rotate(-30)">
+                <rect x="-6" y="-40" width="12" height="36" rx="3" fill="#e9eef3" stroke="#aab4c0"/>
+                <rect x="-9" y="-4" width="18" height="22" rx="3" fill="#6b7786"/>
+                <rect x="-3" y="18" width="6" height="18" fill="#3b4654"/>
+              </g>
+            </svg>
           </div>
-          <p class="form-note">Prefer to text? Send the <strong>make, model and year</strong> to <a data-cfg="phone" data-cfg-attr="sms" href="sms:+16265550147">(626) 555-0147</a>.</p>
-          <div class="form-success" role="status" aria-live="polite"></div>
-        </form>
+          <div class="fn">
+            <h3>ฟังก์ชันหลัก</h3>
+            <ul class="checks">
+              <li>สินค้า หลายหน่วยนับ และบาร์โค้ด</li>
+              <li>จัดซื้อและรับสินค้าเข้าสต็อก</li>
+              <li>สต็อกแยกตามสถานที่เก็บ</li>
+              <li>ขายสินค้าและออกเอกสาร</li>
+              <li>ลูกหนี้ วางบิล และรับชำระ</li>
+              <li>รายงานสต็อก ยอดขาย และกำไร</li>
+            </ul>
+          </div>
+        </div>
       </div>
     </section>
 
-    <!-- Stats -->
-    <section class="stats" aria-label="Highlights">
+    <section class="section white pricing" id="pricing">
+      <div class="container center">
+        <span class="badge">ราคาโปร่งใส เริ่มใช้งานได้ทันที</span>
+        <h2>แพ็กเกจมาตรฐานสำหรับร้านอะไหล่ยนต์</h2>
+        <p class="sub">ทดลองใช้งานฟรี <span data-cfg="trialDays">14</span> วัน โดยไม่มีการเรียกเก็บเงินอัตโนมัติ</p>
+        <div class="plans">
+          <div class="plan">
+            <h3>Starter</h3>
+            <div class="price">390 <small>บาท/เดือน</small></div>
+            <p class="muted">สำหรับร้านขนาดเล็ก เริ่มต้นจัดระบบสต็อก</p>
+            <ul>
+              <li>ผู้ใช้งาน 1 คน</li>
+              <li>สินค้า 1,000 รายการ</li>
+              <li>คลังสินค้า 1 แห่ง</li>
+              <li>ใบเสร็จ / ใบส่งของ</li>
+              <li>รายงานสต็อกและยอดขาย</li>
+            </ul>
+            <a class="btn btn-outline-blue btn-block" href="register.html?plan=starter">เริ่มทดลองใช้ฟรี</a>
+            <p class="note">ไม่ต้องใช้บัตรเครดิต</p>
+          </div>
+          <div class="plan hl">
+            <span class="pop">ยอดนิยม</span>
+            <h3>Standard</h3>
+            <div class="price">790 <small>บาท/เดือน</small></div>
+            <p class="muted">สำหรับร้านที่มีพนักงานหลายคนและหลายคลัง</p>
+            <ul>
+              <li>ผู้ใช้งาน 3 คน</li>
+              <li>สินค้า 10,000 รายการ</li>
+              <li>คลังสินค้า 3 แห่ง</li>
+              <li>ใบเสร็จ / ใบกำกับภาษี / ใบวางบิล</li>
+              <li>ลูกหนี้และรับชำระ</li>
+              <li>รายงานกำไรขั้นต้น</li>
+            </ul>
+            <a class="btn btn-orange btn-block" href="register.html?plan=standard">เริ่มทดลองใช้ฟรี</a>
+            <p class="note">ไม่ต้องใช้บัตรเครดิต</p>
+          </div>
+          <div class="plan">
+            <h3>Pro</h3>
+            <div class="price">1,490 <small>บาท/เดือน</small></div>
+            <p class="muted">สำหรับร้านค้าส่ง / หลายสาขา</p>
+            <ul>
+              <li>ผู้ใช้งานไม่จำกัด</li>
+              <li>สินค้าไม่จำกัด</li>
+              <li>คลังสินค้าไม่จำกัด</li>
+              <li>ทุกเอกสาร + กำหนดสิทธิ์ผู้ใช้</li>
+              <li>ส่งออก Excel / รายงานขั้นสูง</li>
+              <li>ซัพพอร์ตทาง LINE ก่อนใคร</li>
+            </ul>
+            <a class="btn btn-outline-blue btn-block" href="register.html?plan=pro">เริ่มทดลองใช้ฟรี</a>
+            <p class="note">ไม่ต้องใช้บัตรเครดิต</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="features">
       <div class="container">
-        <div class="stat"><strong>25+</strong><span>Years serving LA shops</span></div>
-        <div class="stat"><strong>10k+</strong><span>Parts in stock</span></div>
-        <div class="stat"><strong>Same Day</strong><span>Local delivery</span></div>
-        <div class="stat"><strong>2</strong><span>Warehouse locations</span></div>
+        <div class="center" style="max-width:720px;margin:0 auto 34px">
+          <span class="badge">ครบทุกงานหน้าร้านและหลังร้าน</span>
+          <h2>ฟังก์ชันที่ออกแบบมาเพื่อร้านอะไหล่โดยเฉพาะ</h2>
+          <p class="muted">ไม่ใช่ระบบ POS ทั่วไป แต่คิดมาจากหน้างานจริง: หน่วยนับหลายแบบ เบอร์อะไหล่ รถที่ใช้ได้ และสต็อกที่กระจายอยู่หลายชั้นวาง</p>
+        </div>
+        <div class="features">
+          <div class="feat"><div class="ic">📦</div><h3>สินค้า หลายหน่วยนับ และบาร์โค้ด</h3><p>กำหนดหน่วยซื้อ-หน่วยขาย (เช่น กล่อง 12 ชิ้น) ผูกบาร์โค้ด เบอร์อะไหล่ เบอร์เทียบ และรุ่นรถที่ใช้ได้</p></div>
+          <div class="feat"><div class="ic">🏷️</div><h3>สต็อกแยกตามสถานที่เก็บ</h3><p>รู้ว่าของอยู่ที่คลังไหน ชั้นไหน โอนย้ายระหว่างคลัง และแจ้งเตือนเมื่อต่ำกว่าจุดสั่งซื้อ</p></div>
+          <div class="feat"><div class="ic">🛒</div><h3>จัดซื้อและรับสินค้าเข้าสต็อก</h3><p>เปิดใบสั่งซื้อถึงซัพพลายเออร์ รับของเข้าสต็อกเป็นบางส่วนหรือทั้งหมด ต้นทุนอัปเดตอัตโนมัติ</p></div>
+          <div class="feat"><div class="ic">🧾</div><h3>ขายสินค้าและออกเอกสาร</h3><p>ขายหน้าร้านด้วยบาร์โค้ด ออกใบเสร็จ ใบส่งของ ใบกำกับภาษี พิมพ์ได้ทันทีจากเบราว์เซอร์</p></div>
+          <div class="feat"><div class="ic">💳</div><h3>ลูกหนี้ วางบิล และรับชำระ</h3><p>ขายเชื่อให้ร้านซ่อม/อู่ เปิดใบวางบิลรวมหลายบิล บันทึกรับชำระ และดูยอดค้างแต่ละรายได้ทันที</p></div>
+          <div class="feat"><div class="ic">📊</div><h3>รายงานสต็อก ยอดขาย และกำไร</h3><p>มูลค่าสต็อก สินค้าใกล้หมด ยอดขายรายวัน/รายเดือน กำไรขั้นต้นต่อบิล และประวัติความเคลื่อนไหวทุกรายการ</p></div>
+        </div>
       </div>
     </section>
 
-    <!-- Products -->
-    <section class="section" id="products">
+    <section class="section white" id="how">
       <div class="container">
-        <div class="section-head">
-          <span class="eyebrow">What We're Best Known For</span>
-          <h2>Cooling parts and more, in stock and ready to go</h2>
-          <p class="muted">OE-quality and aftermarket options for domestic, Asian and European applications. Don't see it listed? Call us. We source hard-to-find parts daily.</p>
+        <div class="center" style="margin-bottom:30px">
+          <h2>เริ่มใช้งานได้ใน 4 ขั้นตอน</h2>
+          <p class="muted">ใช้งานผ่านเบราว์เซอร์บนคอมพิวเตอร์ แท็บเล็ต หรือมือถือ ไม่ต้องติดตั้งโปรแกรม</p>
         </div>
-        <div class="grid grid-3">
-          <article class="card">
-            <div class="card-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 5v14M11 5v14M15 5v14M19 5v14" opacity=".55"/><path d="M3 12h18"/></svg></div>
-            <h3>Radiators</h3>
-            <p>Aluminum and plastic-tank radiators for cars, light trucks and SUVs. Koyo, KATO, Nissens, TYC and more.</p>
-            <span class="tag">Best seller</span>
-          </article>
-          <article class="card">
-            <div class="card-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/><circle cx="12" cy="12" r="4"/></svg></div>
-            <h3>A/C Condensers</h3>
-            <p>Parallel-flow condensers with receiver/drier where applicable. Matched sets with radiators available.</p>
-            <span class="tag">Matched sets</span>
-          </article>
-          <article class="card">
-            <div class="card-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2c2 3 2 6 0 7M12 22c-2-3-2-6 0-7M2 12c3-2 6-2 7 0M22 12c-3 2-6 2-7 0"/></svg></div>
-            <h3>Cooling Fan Assemblies</h3>
-            <p>Complete electric fan modules, shrouds and motors. Direct-fit replacements for most late-model vehicles.</p>
-          </article>
-          <article class="card">
-            <div class="card-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v6M12 15v6M3 12h6M15 12h6"/></svg></div>
-            <h3>Brake Pads &amp; Rotors</h3>
-            <p>Ceramic and semi-metallic pads plus coated rotors. Quiet, low-dust formulas shops trust.</p>
-          </article>
-          <article class="card">
-            <div class="card-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></div>
-            <h3>Alternators &amp; Starters</h3>
-            <p>New and remanufactured units, bench-tested. Core exchange accepted at the counter.</p>
-          </article>
-          <article class="card">
-            <div class="card-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h13l3 4h2v6h-2M3 7v10h2M8 17h8"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg></div>
-            <h3>Heavy-Duty &amp; Fleet</h3>
-            <p>Radiators, charge-air coolers and oil coolers for work trucks and fleet vehicles. Volume pricing.</p>
-            <span class="tag">Ask about fleet accounts</span>
-          </article>
+        <div class="steps">
+          <div class="step"><div class="n">1</div><h3>สมัครใช้งาน</h3><p>กรอกชื่อร้านและอีเมล ระบบเปิดบัญชีทดลองให้ทันที</p></div>
+          <div class="step"><div class="n">2</div><h3>นำเข้าสินค้า</h3><p>เพิ่มสินค้าทีละรายการ หรือนำเข้าจาก Excel ทั้งหมดในครั้งเดียว</p></div>
+          <div class="step"><div class="n">3</div><h3>ตั้งยอดสต็อกเริ่มต้น</h3><p>นับของที่มีอยู่ ใส่ยอดยกมาแยกตามคลัง/ชั้นวาง</p></div>
+          <div class="step"><div class="n">4</div><h3>เริ่มซื้อ-ขาย</h3><p>เปิดบิลขาย รับของเข้า ดูรายงานได้แบบเรียลไทม์</p></div>
         </div>
       </div>
     </section>
 
-    <!-- Brands -->
-    <section class="section alt" id="brands">
+    <section class="section" id="faq">
       <div class="container">
-        <div class="section-head">
-          <span class="eyebrow">Brands We Carry</span>
-          <h2>Premium cooling brands at wholesale prices</h2>
-        </div>
-        <div class="brand-highlight">
-          <div class="brand-feature">
-            <div class="logo-box">KOYO</div>
-            <div>
-              <span class="pill">Official distributor</span>
-              <h3>Koyorad Radiators</h3>
-              <p>Japanese OE-supplier quality. Full-aluminum and plastic-tank applications for Asian and domestic vehicles.</p>
-            </div>
-          </div>
-          <div class="brand-feature">
-            <div class="logo-box">KATO</div>
-            <div>
-              <span class="pill">Exclusive line</span>
-              <h3>KATO Precision Cooling</h3>
-              <p>Our exclusive premium line: tighter tolerances, thicker cores and a warranty shops can stand behind.</p>
-            </div>
-          </div>
-        </div>
-        <div class="brand-logos" aria-label="Brands">
-          <div class="brand-logo">Denso</div>
-          <div class="brand-logo">Nissens</div>
-          <div class="brand-logo">TYC</div>
-          <div class="brand-logo">Spectra</div>
-          <div class="brand-logo">CSF</div>
-          <div class="brand-logo">Metrix</div>
+        <h2 class="center" style="margin-bottom:24px">คำถามที่พบบ่อย</h2>
+        <div class="faq">
+          <details><summary>ทดลองใช้ฟรีแล้วจะถูกเรียกเก็บเงินอัตโนมัติไหม?</summary><p>ไม่ครับ เมื่อครบ <span data-cfg="trialDays">14</span> วัน ระบบจะแจ้งให้เลือกแพ็กเกจ หากไม่ชำระ บัญชีจะถูกพักไว้ ข้อมูลยังอยู่ 30 วัน ไม่มีการตัดเงินอัตโนมัติ</p></details>
+          <details><summary>ใช้กับเครื่องอ่านบาร์โค้ดและเครื่องพิมพ์ใบเสร็จได้ไหม?</summary><p>ได้ เครื่องอ่านบาร์โค้ดแบบ USB/Bluetooth ใช้ได้ทันที เอกสารพิมพ์ผ่านเบราว์เซอร์ได้ทั้งขนาด A4 และสลิป 80 มม.</p></details>
+          <details><summary>มีข้อมูลสินค้าอยู่ใน Excel แล้ว นำเข้าได้ไหม?</summary><p>ได้ ดาวน์โหลดไฟล์แม่แบบจากหน้า "สินค้า" แล้วอัปโหลดกลับ ระบบจะสร้างสินค้าและยอดสต็อกเริ่มต้นให้</p></details>
+          <details><summary>ข้อมูลปลอดภัยแค่ไหน?</summary><p>ข้อมูลแต่ละร้านแยกจากกัน เข้ารหัสระหว่างส่ง สำรองข้อมูลทุกวัน และส่งออกข้อมูลของร้านออกมาได้ตลอดเวลา</p></details>
+          <details><summary>ต้องเซ็นสัญญาระยะยาวไหม?</summary><p>ไม่ต้อง ชำระรายเดือน ยกเลิกได้ทุกเมื่อ หรือชำระรายปีลด 2 เดือน</p></details>
         </div>
       </div>
     </section>
 
-    <!-- Services -->
-    <section class="section" id="services">
-      <div class="container">
-        <div class="section-head">
-          <span class="eyebrow">How We Work</span>
-          <h2>Built for busy shops</h2>
-        </div>
-        <div class="grid grid-3">
-          <div class="service">
-            <div class="card-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
-            <div><h3>Business Hours</h3><p><span data-cfg="hours.weekdays">Mon – Fri: 8:00 AM – 5:00 PM</span><br><span data-cfg="hours.saturday">Saturday: 8:00 AM – 1:00 PM</span><br><span data-cfg="hours.sunday">Sunday: Closed</span></p></div>
-          </div>
-          <div class="service">
-            <div class="card-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h13l3 4h2v6h-2M3 7v10h2M8 17h8"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg></div>
-            <div><h3>Same-Day Local Delivery</h3><p>Order before noon for same-day delivery across the San Gabriel Valley and South Bay. Multiple runs daily.</p></div>
-          </div>
-          <div class="service">
-            <div class="card-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M10 18h4"/></svg></div>
-            <div><h3>Text-Based Quotes</h3><p>Text us the make, model and year and we'll reply with pricing and availability. No account needed.</p></div>
-          </div>
-          <div class="service">
-            <div class="card-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></div>
-            <div><h3>Nationwide Shipping</h3><p>Boxed and strapped for freight. Most orders ship the same or next business day.</p></div>
-          </div>
-          <div class="service">
-            <div class="card-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg></div>
-            <div><h3>Bulk &amp; Trade Pricing</h3><p>Tiered pricing for repair shops, body shops and dealerships. Open a trade account in minutes.</p></div>
-          </div>
-          <div class="service">
-            <div class="card-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></div>
-            <div><h3>Warranty Support</h3><p>Manufacturer warranties honored at the counter. Straightforward returns on unused parts.</p></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Why us -->
-    <section class="section alt" id="why">
-      <div class="container split">
-        <div>
-          <span class="eyebrow">Why Shops Choose Us</span>
-          <h2>Family-owned. Shop-focused. Since <span data-cfg="since">1997</span>.</h2>
-          <p class="muted">We're not a big-box chain. We're a cooling specialist that knows which radiator actually fits, which condenser needs a drier, and how fast you need it on the lift.</p>
-          <ul class="checklist">
-            <li><span class="check"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><div><strong>Specialists, not generalists</strong><span>Radiators and condensers are our core business, so our counter staff can confirm fitment fast.</span></div></li>
-            <li><span class="check"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><div><strong>Deep local inventory</strong><span>Two LA-area warehouses stocked for the vehicles that actually come through your bays.</span></div></li>
-            <li><span class="check"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><div><strong>Honest pricing</strong><span>Wholesale rates, no gimmicks, and bulk discounts that scale with your volume.</span></div></li>
-            <li><span class="check"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><div><strong>Reliable delivery</strong><span>Our own drivers, multiple runs a day, and real-time updates by text.</span></div></li>
-          </ul>
-        </div>
-        <div class="visual">
-          <svg class="bg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 5v14M11 5v14M15 5v14M19 5v14"/><path d="M3 12h18"/></svg>
-          <div class="big"><small>Serving Los Angeles</small>Since <span data-cfg="since">1997</span></div>
-          <p>Thousands of radiators and condensers delivered to repair shops, body shops and dealerships across Southern California.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- Service areas -->
-    <section class="section" id="areas">
-      <div class="container">
-        <div class="section-head">
-          <span class="eyebrow">Delivery Areas</span>
-          <h2>Same-day delivery across LA County</h2>
-          <p class="muted">Not on the list? Call us. We ship anywhere in the U.S.</p>
-        </div>
-        <div class="chips" data-areas></div>
-      </div>
-    </section>
-
-    <!-- Locations -->
-    <section class="section alt" id="locations">
-      <div class="container">
-        <div class="section-head">
-          <span class="eyebrow">Locations &amp; Hours</span>
-          <h2>Two warehouses, one phone number</h2>
-        </div>
-        <div class="loc" data-locations></div>
-      </div>
-    </section>
-
-    <!-- CTA -->
-    <section class="cta-band">
-      <div class="container">
-        <div>
-          <h2>Need a part today?</h2>
-          <p>Call or text the vehicle's make, model and year. We'll confirm fitment and price in minutes.</p>
-        </div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap">
-          <a class="btn btn-dark" data-cfg="phone" data-cfg-attr="tel" href="tel:+16265550147">Call (626) 555-0147</a>
-          <a class="btn btn-outline" data-cfg="smsRaw" data-cfg-attr="sms" href="sms:+16265550147">Text Us</a>
+    <section class="cta">
+      <div class="container center">
+        <h2>พร้อมจัดระบบร้านอะไหล่ของคุณหรือยัง?</h2>
+        <p>ทดลองใช้ฟรี <span data-cfg="trialDays">14</span> วัน หรือทักมาคุยกับเราทาง LINE ได้เลย</p>
+        <div class="btns">
+          <a class="btn btn-orange" href="register.html">ทดลองใช้ฟรี <span data-cfg="trialDays">14</span> วัน</a>
+          <a class="btn btn-outline-white" data-cfg-href="lineUrl" href="#" target="_blank" rel="noopener">💬 ทักไลน์ <span data-cfg="line">jpnpart</span></a>
         </div>
       </div>
     </section>
   </main>
 
-  <footer class="footer" id="contact">
+  <footer class="footer">
     <div class="container">
       <div>
-        <a class="brand" href="index.html">
-          <span class="brand-mark" aria-hidden="true">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 5v14M11 5v14M15 5v14M19 5v14" opacity=".55"/><path d="M3 12h18"/></svg>
-          </span>
-          <span class="brand-text">
-            <strong data-cfg="name">Pacific Radiators</strong>
-            <span>Trusted since <span data-cfg="since">1997</span></span>
-          </span>
-        </a>
-        <p>Wholesale radiators, A/C condensers and cooling parts for repair shops, body shops and dealerships across Los Angeles County. Same-day local delivery, nationwide shipping.</p>
-        <p>
-          <a data-cfg="phone" data-cfg-attr="tel" href="tel:+16265550147">(626) 555-0147</a><br>
-          <a data-cfg="email" data-cfg-attr="mailto" href="mailto:sales@pacificradiators.example">sales@pacificradiators.example</a>
-        </p>
+        <h4>🔧 <span data-cfg="brand">JPN AUTOPARTS</span></h4>
+        <p><span data-cfg="tagline">ระบบบริหารงานร้านอะไหล่ยนต์ออนไลน์</span> — บริหารสินค้า สต็อก ซื้อ และขาย ในระบบเดียว ใช้งานได้ทันทีผ่านเบราว์เซอร์ ไม่ต้องติดตั้ง</p>
       </div>
       <div>
-        <h4>Products</h4>
+        <h4>เมนู</h4>
         <ul>
-          <li><a href="index.html#products">Radiators</a></li>
-          <li><a href="index.html#products">A/C Condensers</a></li>
-          <li><a href="index.html#products">Cooling Fan Assemblies</a></li>
-          <li><a href="index.html#products">Brake Pads &amp; Rotors</a></li>
-          <li><a href="index.html#products">Alternators &amp; Starters</a></li>
+          <li><a href="index.html#features">ฟังก์ชันหลัก</a></li>
+          <li><a href="index.html#pricing">แพ็กเกจ</a></li>
+          <li><a href="docs.html">คู่มือการใช้งาน</a></li>
+          <li><a href="login.html">เข้าสู่ระบบ</a></li>
+          <li><a href="register.html">สมัครใช้งาน</a></li>
         </ul>
       </div>
       <div>
-        <h4>Company</h4>
+        <h4>ติดต่อ</h4>
         <ul>
-          <li><a href="about.html">About Us</a></li>
-          <li><a href="index.html#brands">Brands We Carry</a></li>
-          <li><a href="index.html#services">Services</a></li>
-          <li><a href="index.html#locations">Locations &amp; Hours</a></li>
-          <li><a href="privacy.html">Privacy Policy</a></li>
+          <li>💬 LINE: <a data-cfg="line" data-cfg-href="lineUrl" href="#">jpnpart</a></li>
+          <li>📞 Mobile: <a data-cfg="mobile" data-cfg-attr="tel" href="#">08x-xxx-xxxx</a></li>
+          <li>✉️ Email: <a data-cfg="email" data-cfg-attr="mailto" href="#">sales@jpnpart.example</a></li>
         </ul>
       </div>
-      <div>
-        <h4>Hours</h4>
-        <ul>
-          <li data-cfg="hours.weekdays">Mon – Fri: 8:00 AM – 5:00 PM</li>
-          <li data-cfg="hours.saturday">Saturday: 8:00 AM – 1:00 PM</li>
-          <li data-cfg="hours.sunday">Sunday: Closed</li>
-        </ul>
-        <h4 style="margin-top:18px">Get a Quote</h4>
-        <ul>
-          <li><a href="index.html#quote">Online quote form</a></li>
-          <li><a data-cfg="smsRaw" data-cfg-attr="sms" href="sms:+16265550147">Text us: make / model / year</a></li>
-        </ul>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      <div class="container">
-        <span>© <span data-year>2026</span> <span data-cfg="legalName">Pacific Radiators &amp; Auto Parts</span>. All rights reserved.</span>
-        <span><a href="privacy.html">Privacy Policy</a> · <a href="index.html#contact">Contact</a></span>
-      </div>
+      <div class="copy">© <span data-year>2026</span> <span data-cfg="brand">JPN AUTOPARTS</span>. All rights reserved.</div>
     </div>
   </footer>
-
-  <div class="callbar" aria-label="Quick actions">
-    <a class="btn btn-dark" data-cfg="phone" data-cfg-attr="tel" href="tel:+16265550147">Call Now</a>
-    <a class="btn btn-primary" href="index.html#quote">Get a Quote</a>
-  </div>
-
   <script src="assets/site.js"></script>
 </body>
 </html>

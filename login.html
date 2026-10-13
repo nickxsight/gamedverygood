@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#1b3a63" />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/styles.css" />
+  <script src="site-config.js"></script>
+  <title>เข้าสู่ระบบ | JPN AUTOPARTS</title>
+  <meta name="description" content="เข้าสู่ระบบบริหารร้านอะไหล่ยนต์ JPN AUTOPARTS" />
+  <meta property="og:title" content="เข้าสู่ระบบ | JPN AUTOPARTS" />
+  <meta property="og:description" content="เข้าสู่ระบบบริหารร้านอะไหล่ยนต์ JPN AUTOPARTS" />
+</head>
+<body>
+  <header class="header">
+    <div class="container">
+      <a class="brand" href="index.html"><span class="ic">🔧</span> <span data-cfg="brand">JPN AUTOPARTS</span></a>
+      <div class="header-actions">
+        <a class="btn btn-outline-white" href="login.html">เข้าสู่ระบบ</a>
+        <a class="btn btn-orange" href="register.html">สมัครใช้งาน</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="auth">
+    <form class="auth-card" id="login-form" novalidate>
+      <h1>เข้าสู่ระบบ</h1>
+      <p class="muted">เข้าใช้งาน <span data-cfg="brand">JPN AUTOPARTS</span> ด้วยอีเมลที่สมัครไว้</p>
+      <div class="demo-box">🧪 <strong>บัญชีทดลอง:</strong> อีเมล <code>demo@shop.test</code> รหัสผ่าน <code>demo1234</code> (มีข้อมูลตัวอย่างให้ลองใช้)</div>
+      <div class="form-error" role="alert"></div>
+      <div class="field"><label for="email">อีเมล</label><input id="email" name="email" type="email" autocomplete="username" required placeholder="you@shop.com" /></div>
+      <div class="field"><label for="password">รหัสผ่าน</label><input id="password" name="password" type="password" autocomplete="current-password" required placeholder="••••••••" /></div>
+      <button class="btn btn-blue btn-block" type="submit">เข้าสู่ระบบ</button>
+      <p class="alt">ยังไม่มีบัญชี? <a href="register.html">สมัครใช้งานฟรี <span data-cfg="trialDays">14</span> วัน</a></p>
+    </form>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div>
+        <h4>🔧 <span data-cfg="brand">JPN AUTOPARTS</span></h4>
+        <p><span data-cfg="tagline">ระบบบริหารงานร้านอะไหล่ยนต์ออนไลน์</span> — บริหารสินค้า สต็อก ซื้อ และขาย ในระบบเดียว ใช้งานได้ทันทีผ่านเบราว์เซอร์ ไม่ต้องติดตั้ง</p>
+      </div>
+      <div>
+        <h4>เมนู</h4>
+        <ul>
+          <li><a href="index.html#features">ฟังก์ชันหลัก</a></li>
+          <li><a href="index.html#pricing">แพ็กเกจ</a></li>
+          <li><a href="docs.html">คู่มือการใช้งาน</a></li>
+          <li><a href="login.html">เข้าสู่ระบบ</a></li>
+          <li><a href="register.html">สมัครใช้งาน</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>ติดต่อ</h4>
+        <ul>
+          <li>💬 LINE: <a data-cfg="line" data-cfg-href="lineUrl" href="#">jpnpart</a></li>
+          <li>📞 Mobile: <a data-cfg="mobile" data-cfg-attr="tel" href="#">08x-xxx-xxxx</a></li>
+          <li>✉️ Email: <a data-cfg="email" data-cfg-attr="mailto" href="#">sales@jpnpart.example</a></li>
+        </ul>
+      </div>
+      <div class="copy">© <span data-year>2026</span> <span data-cfg="brand">JPN AUTOPARTS</span>. All rights reserved.</div>
+    </div>
+  </footer>
+  <script src="assets/site.js"></script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ระบบบริหารร้านอะไหล่ยนต์ | JPN AUTOPARTS</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/app.css" />
+  <script src="site-config.js"></script>
+</head>
+<body>
+  <div class="app">
+    <aside class="side" id="side">
+      <a class="brand" href="index.html">🔧 <span data-cfg="brand">JPN AUTOPARTS</span></a>
+      <div class="shop"><strong id="side-shop">ร้าน</strong><span id="side-user"></span></div>
+      <ul class="menu" id="menu">
+        <li><a href="#dashboard"><span class="ic">🏠</span> แดชบอร์ด</a></li>
+        <li><a href="#products"><span class="ic">📦</span> สินค้า</a></li>
+        <li><a href="#stock"><span class="ic">🏷️</span> สต็อก</a></li>
+        <li><a href="#purchases"><span class="ic">🛒</span> จัดซื้อ / รับสินค้า</a></li>
+        <li><a href="#sales"><span class="ic">🧾</span> ขาย / เอกสาร</a></li>
+        <li><a href="#ar"><span class="ic">💳</span> ลูกหนี้ / รับชำระ</a></li>
+        <li><a href="#reports"><span class="ic">📊</span> รายงาน</a></li>
+        <li><a href="#contacts"><span class="ic">👥</span> ซัพพลายเออร์ / ลูกค้า</a></li>
+        <li><a href="#settings"><span class="ic">⚙️</span> ตั้งค่า</a></li>
+      </ul>
+      <div class="foot"><a href="docs.html" target="_blank">คู่มือการใช้งาน</a> · <a href="#" id="logout">ออกจากระบบ</a></div>
+    </aside>
+    <div class="main">
+      <div class="topbar">
+        <div class="inline"><button class="btn ghost sm menu-btn" id="menu-btn">☰</button><h1 id="page-title">แดชบอร์ด</h1></div>
+        <div class="right"><span class="trial" id="trial"></span><span class="name muted" id="top-user"></span></div>
+      </div>
+      <div class="content" id="view"></div>
+    </div>
+  </div>
+  <div class="modal-bg" id="modal-bg"><div class="modal" id="modal"></div></div>
+  <div class="toast" id="toast"></div>
+  <div id="print"></div>
+  <script src="assets/app.js"></script>
+</body>
+</html>
